@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader, AlertCircle, Camera, Sparkles } from "lucide-react"
 import { PhotoGrid } from "@/components/photo-grid"
+import { apiClient } from "@/lib/api-client"
 
 interface SearchResult {
   id: string
@@ -71,38 +72,32 @@ export default function FaceSearchPage() {
     setError(null)
 
     try {
-      // Simulate API call to /search/face with local-only matching
-      await new Promise((resolve) => setTimeout(resolve, 2500))
+      // Real API call
+      const { data, error } = await apiClient.searchByFace(uploadedImage)
 
-      // Mock search results
-      const mockResults: SearchResult[] = [
-        {
-          id: "1",
-          url: "/placeholder.svg?key=av3kp",
-          eventName: "Spring Orientation 2024",
-          eventDate: "2024-03-15",
-          confidence: 0.98,
-        },
-        {
-          id: "2",
-          url: "/placeholder.svg?key=k99b3",
-          eventName: "Sports Day 2024",
-          eventDate: "2024-04-20",
-          confidence: 0.92,
-        },
-        {
-          id: "3",
-          url: "/placeholder.svg?key=ykote",
-          eventName: "Campus Concert",
-          eventDate: "2024-05-10",
-          confidence: 0.88,
-        },
-      ]
+      if (error) {
+        throw new Error(error)
+      }
 
-      setSearchResults(mockResults)
+      // Backend now returns { message, results: [...] }
+      console.log('Search response:', data)
+
+      // Show debug info
+      if (data && data.message) {
+        alert(`Backend says: ${data.message}\nResults: ${data.results?.length || 0}`)
+      }
+
+      if (data && data.results) {
+        setSearchResults(data.results)
+      } else {
+        setSearchResults([])
+      }
+
       setHasSearched(true)
+
     } catch (err) {
-      setError("Face search failed. Please try again.")
+      console.error('Full error:', err)
+      setError(`Face search failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
     } finally {
       setIsSearching(false)
     }

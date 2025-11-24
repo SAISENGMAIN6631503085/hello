@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { PhotosService } from './photos.service';
 import { Prisma } from '@prisma/client';
 
@@ -14,5 +15,21 @@ export class PhotosController {
     @Get()
     findAll() {
         return this.photosService.findAll();
+    }
+
+    @Post('upload')
+    @UseInterceptors(FileInterceptor('file'))
+    async uploadPhoto(
+        @UploadedFile() file: Express.Multer.File,
+        @Body('eventId') eventId: string,
+    ) {
+        if (!file) {
+            throw new BadRequestException('File is required');
+        }
+        if (!eventId) {
+            throw new BadRequestException('Event ID is required');
+        }
+
+        return this.photosService.uploadAndProcessPhoto(file, eventId);
     }
 }

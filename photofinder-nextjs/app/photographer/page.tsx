@@ -112,6 +112,7 @@ export default function PhotographerPage() {
   const [enableExif, setEnableExif] = useState(true)
   const [enableDedup, setEnableDedup] = useState(true)
   const [enableCompress, setEnableCompress] = useState(false)
+  const [events, setEvents] = useState<Array<{ id: string; name: string }>>([])
 
   useEffect(() => {
     const userRole = localStorage.getItem("user_role")
@@ -145,6 +146,42 @@ export default function PhotographerPage() {
         id: "photographer-1",
       })
     }
+
+    // Fetch real events and photos from backend
+    const loadData = async () => {
+      try {
+        const eventsRes = await fetch('http://localhost:3000/events')
+        const eventsData = await eventsRes.json()
+        setEvents(eventsData)
+
+        const photosRes = await fetch('http://localhost:3000/photos')
+        const photosData = await photosRes.json()
+
+        // Transform backend data to match frontend format
+        const transformedPhotos = photosData.map((photo: any) => {
+          const event = eventsData.find((e: any) => e.id === photo.eventId)
+          return {
+            id: photo.id,
+            filename: photo.storageUrl.split('/').pop() || 'unknown',
+            eventName: event?.name || 'Unknown Event',
+            uploadDate: photo.createdAt,
+            status: photo.processingStatus.toLowerCase(),
+            size: 'N/A',
+            thumbnail: photo.storageUrl,
+            metadata: {
+              camera: 'Unknown',
+              location: 'Unknown',
+              datetime: photo.createdAt,
+            },
+          }
+        })
+        setUploadedPhotos(transformedPhotos)
+      } catch (err) {
+        console.error('Failed to load data:', err)
+      }
+    }
+
+    loadData()
 
     setIsAuthenticated(true)
     setIsLoading(false)
@@ -199,10 +236,8 @@ export default function PhotographerPage() {
     for (let i = 0; i < selectedFiles.length; i++) {
       const file = selectedFiles[i]
       const formData = new FormData()
-      formData.append("photo", file)
-      formData.append("enableExif", String(enableExif))
-      formData.append("enableDedup", String(enableDedup))
-      formData.append("enableCompress", String(enableCompress))
+      formData.append("file", file)
+      formData.append("eventId", selectedEvent)
 
       try {
         setUploadProgress((prev) => ({ ...prev, [file.name]: 0 }))
@@ -218,12 +253,9 @@ export default function PhotographerPage() {
           })
         }, 200)
 
-        const response = await fetch(`/api/events/${selectedEvent}/upload`, {
+        const response = await fetch(`http://localhost:3000/photos/upload`, {
           method: "POST",
           body: formData,
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-          },
         })
 
         clearInterval(progressInterval)
@@ -236,12 +268,12 @@ export default function PhotographerPage() {
             {
               id: data.photoId || String(Date.now() + i),
               filename: file.name,
-              eventName: selectedEvent,
+              eventName: events.find(e => e.id === selectedEvent)?.name || selectedEvent,
               uploadDate: new Date().toISOString(),
-              status: "processing",
+              status: data.status === 'success' ? "processed" : "processing",
               size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-              thumbnail: URL.createObjectURL(file),
-              metadata: data.metadata || {
+              thumbnail: data.storageUrl || URL.createObjectURL(file),
+              metadata: {
                 camera: "Unknown",
                 location: "Unknown",
                 datetime: new Date().toISOString(),
@@ -417,10 +449,11 @@ export default function PhotographerPage() {
                         className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                       >
                         <option value="">-- Select an Event --</option>
-                        <option value="event1">Annual Sports Day 2025</option>
-                        <option value="event2">Cultural Festival</option>
-                        <option value="event3">Graduation Ceremony 2025</option>
-                        <option value="event4">Tech Conference</option>
+                        {events.map((event) => (
+                          <option key={event.id} value={event.id}>
+                            {event.name}
+                          </option>
+                        ))}
                       </select>
                     </CardContent>
                   </Card>

@@ -34,55 +34,36 @@ export default function BrowsePhotosPage() {
       return
     }
 
-    // Load mock photos
-    setTimeout(() => {
-      const mockPhotos: Photo[] = [
-        {
-          id: "1",
-          url: "/student-at-campus-event-photo.jpg",
-          eventName: "Spring Orientation 2024",
-          eventDate: "2024-03-15",
-          confidence: 0.95,
-        },
-        {
-          id: "2",
-          url: "/group-of-students-at-outdoor-event.jpg",
-          eventName: "Sports Day 2024",
-          eventDate: "2024-04-20",
-          confidence: 0.88,
-        },
-        {
-          id: "3",
-          url: "/students-at-concert-event.jpg",
-          eventName: "Campus Concert",
-          eventDate: "2024-05-10",
-          confidence: 0.92,
-        },
-        {
-          id: "4",
-          url: "/students-at-graduation-ceremony.jpg",
-          eventName: "Faculty Awards",
-          eventDate: "2024-05-25",
-          confidence: 0.91,
-        },
-        {
-          id: "5",
-          url: "/vibrant-sports-event.png",
-          eventName: "Sports Day 2024",
-          eventDate: "2024-04-20",
-          confidence: 0.85,
-        },
-        {
-          id: "6",
-          url: "/vibrant-concert-stage.png",
-          eventName: "Campus Concert",
-          eventDate: "2024-05-10",
-          confidence: 0.89,
-        },
-      ]
-      setAllPhotos(mockPhotos)
-      setIsLoading(false)
-    }, 800)
+    // Fetch real events and photos from backend
+    const loadData = async () => {
+      try {
+        const eventsRes = await fetch('http://localhost:3000/events')
+        const eventsData = await eventsRes.json()
+
+        const photosRes = await fetch('http://localhost:3000/photos')
+        const photosData = await photosRes.json()
+
+        // Transform backend data to match frontend format
+        const transformedPhotos = photosData.map((photo: any) => {
+          const event = eventsData.find((e: any) => e.id === photo.eventId)
+          return {
+            id: photo.id,
+            url: photo.storageUrl,
+            eventName: event?.name || 'Unknown Event',
+            eventDate: event?.date || photo.createdAt,
+            confidence: 0.95, // Placeholder
+          }
+        })
+
+        setAllPhotos(transformedPhotos)
+        setIsLoading(false)
+      } catch (err) {
+        console.error('Failed to load data:', err)
+        setIsLoading(false)
+      }
+    }
+
+    loadData()
   }, [router])
 
   // Apply filters

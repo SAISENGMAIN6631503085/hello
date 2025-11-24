@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api"
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
 export interface ApiResponse<T> {
   data?: T
@@ -59,11 +59,34 @@ export const apiClient = {
   },
 
   // Search
-  searchByFace: (imageData: string, eventId?: string) =>
-    apiCall("/search/face", {
-      method: "POST",
-      body: JSON.stringify({ imageData, eventId }),
-    }),
+  searchByFace: async (imageData: string, eventId?: string) => {
+    try {
+      // Convert base64 to blob
+      const response = await fetch(imageData)
+      const blob = await response.blob()
+
+      // Create FormData
+      const formData = new FormData()
+      formData.append('file', blob, 'search-image.jpg')
+      if (eventId) {
+        formData.append('eventId', eventId)
+      }
+
+      // Send as multipart/form-data
+      const res = await fetch(`${API_BASE}/search/face`, {
+        method: 'POST',
+        body: formData,
+      })
+
+      const data = await res.json()
+      console.log('Backend response:', data)
+
+      return { data, error: null }
+    } catch (error) {
+      console.error('searchByFace error:', error)
+      return { data: null, error: error instanceof Error ? error.message : 'Unknown error' }
+    }
+  },
 
   // Photos
   getMyPhotos: () => apiCall("/me/my-photos"),
@@ -75,7 +98,7 @@ export const apiClient = {
 
   // Deliveries
   triggerDelivery: (userId: string, eventId: string, deliveryMethod: string) =>
-    apiCall("/deliveries/trigger", {
+    apiCall("/delivery/trigger", {
       method: "POST",
       body: JSON.stringify({ userId, eventId, deliveryMethod }),
     }),

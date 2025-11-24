@@ -55,6 +55,16 @@ services:
     networks:
       - face_search_net
 
+  ai-service:
+    build:
+      context: ../ai-service
+      dockerfile: Dockerfile
+    container_name: face_search_ai
+    ports:
+      - '8000:8000'
+    networks:
+      - face_search_net
+
 networks:
   face_search_net:
     driver: bridge

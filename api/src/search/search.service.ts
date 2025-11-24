@@ -44,8 +44,8 @@ export class SearchService implements OnModuleInit {
         }
     }
 
-    async addFace(photoId: string, eventId: string, vector: number[]) {
-        return await this.client.data
+    async addFace(vector: number[], photoId: string, eventId: string): Promise<string> {
+        const result = await this.client.data
             .creator()
             .withClassName('Face')
             .withProperties({
@@ -54,6 +54,12 @@ export class SearchService implements OnModuleInit {
             })
             .withVector(vector)
             .do();
+
+        if (!result.id) {
+            throw new Error('Failed to create face in Weaviate');
+        }
+
+        return result.id;
     }
 
     async searchFaces(vector: number[], limit = 10) {
