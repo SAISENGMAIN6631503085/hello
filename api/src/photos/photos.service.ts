@@ -96,4 +96,51 @@ export class PhotosService {
             throw error;
         }
     }
+
+    async deletePhoto(id: string) {
+        this.logger.log(`Deleting photo ${id}`);
+
+        // 1. Get photo details
+        const photo = await this.prisma.photo.findUnique({
+            where: { id },
+            include: { faces: true },
+        });
+
+        if (!photo) {
+            throw new Error('Photo not found');
+        }
+
+        // 2. Delete faces from Weaviate
+        for (const face of photo.faces) {
+            if (face.weaviateId) {
+                try {
+                    await this.searchService.deleteFace(face.weaviateId);
+                } catch (error) {
+                    this.logger.warn(`Failed to delete face ${face.weaviateId} from Weaviate:`, error);
+                }
+            }
+        }
+
+        // 3. Delete faces from database first (foreign key constraint)
+        await this.prisma.face.deleteMany({
+            where: { photoId: id },
+        });
+
+        // 4. Delete photo from database
+        await this.prisma.photo.delete({
+            where: { id },
+        });
+
+        // 5. Delete from MinIO
+        try {
+            const objectName = photo.storageUrl.split('/').pop();
+            if (objectName) {
+                await this.minioService.deleteFile(objectName);
+            }
+        } catch (error) {
+            this.logger.warn(`Failed to delete file from MinIO:`, error);
+        }
+
+        return { message: 'Photo deleted successfully', id };
+    }
 }

@@ -19,6 +19,7 @@ import {
   Clock,
   FolderUp,
   Trash2,
+  Trash,
   ChevronDown,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -32,6 +33,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { apiClient } from "@/lib/api-client"
 
 // Mock uploaded photos data
 const mockUploadedPhotos = [
@@ -98,7 +100,7 @@ export default function PhotographerPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [uploadedPhotos, setUploadedPhotos] = useState(mockUploadedPhotos)
+  const [uploadedPhotos, setUploadedPhotos] = useState<any[]>([])
   const [photographerUser, setPhotographerUser] = useState<{
     name: string
     email: string
@@ -113,6 +115,49 @@ export default function PhotographerPage() {
   const [enableDedup, setEnableDedup] = useState(true)
   const [enableCompress, setEnableCompress] = useState(false)
   const [events, setEvents] = useState<Array<{ id: string; name: string }>>([])
+  // Fetch real events and photos from backend
+  const loadData = async () => {
+    try {
+      const eventsRes = await fetch('http://localhost:3000/events');
+      const eventsData = await eventsRes.json();
+      const safeEvents = Array.isArray(eventsData) ? eventsData : [];
+      if (!Array.isArray(eventsData)) {
+        console.error('Events API returned non-array:', eventsData);
+      }
+      setEvents(safeEvents);
+
+      const photosRes = await fetch('http://localhost:3000/photos');
+      const photosData = await photosRes.json();
+
+      if (Array.isArray(photosData)) {
+        const transformedPhotos = photosData.map((photo: any) => {
+          const event = safeEvents.find((e: any) => e.id === photo.eventId);
+          return {
+            id: photo.id,
+            filename: photo.storageUrl.split('/').pop() || 'unknown',
+            eventName: event?.name || 'Unknown Event',
+            uploadDate: photo.createdAt,
+            status: photo.processingStatus.toLowerCase(),
+            size: 'N/A',
+            thumbnail: photo.storageUrl,
+            metadata: {
+              camera: 'Unknown',
+              location: 'Unknown',
+              datetime: photo.createdAt,
+            },
+          };
+        });
+        setUploadedPhotos(transformedPhotos);
+      } else {
+        console.error('Photos API returned non-array:', photosData);
+        setUploadedPhotos([]);
+      }
+    } catch (err) {
+      console.error('Failed to load data:', err);
+      setEvents([]);
+      setUploadedPhotos([]);
+    }
+  };
 
   useEffect(() => {
     const userRole = localStorage.getItem("user_role")
@@ -147,41 +192,7 @@ export default function PhotographerPage() {
       })
     }
 
-    // Fetch real events and photos from backend
-    const loadData = async () => {
-      try {
-        const eventsRes = await fetch('http://localhost:3000/events')
-        const eventsData = await eventsRes.json()
-        setEvents(eventsData)
-
-        const photosRes = await fetch('http://localhost:3000/photos')
-        const photosData = await photosRes.json()
-
-        // Transform backend data to match frontend format
-        const transformedPhotos = photosData.map((photo: any) => {
-          const event = eventsData.find((e: any) => e.id === photo.eventId)
-          return {
-            id: photo.id,
-            filename: photo.storageUrl.split('/').pop() || 'unknown',
-            eventName: event?.name || 'Unknown Event',
-            uploadDate: photo.createdAt,
-            status: photo.processingStatus.toLowerCase(),
-            size: 'N/A',
-            thumbnail: photo.storageUrl,
-            metadata: {
-              camera: 'Unknown',
-              location: 'Unknown',
-              datetime: photo.createdAt,
-            },
-          }
-        })
-        setUploadedPhotos(transformedPhotos)
-      } catch (err) {
-        console.error('Failed to load data:', err)
-      }
-    }
-
-    loadData()
+    loadData();
 
     setIsAuthenticated(true)
     setIsLoading(false)
@@ -232,9 +243,7 @@ export default function PhotographerPage() {
     }
 
     setIsUploading(true)
-
-    for (let i = 0; i < selectedFiles.length; i++) {
-      const file = selectedFiles[i]
+    const uploadPromises = selectedFiles.map(async (file, i) => {
       const formData = new FormData()
       formData.append("file", file)
       formData.append("eventId", selectedEvent)
@@ -264,23 +273,7 @@ export default function PhotographerPage() {
           const data = await response.json()
           setUploadProgress((prev) => ({ ...prev, [file.name]: 100 }))
 
-          setUploadedPhotos((prev) => [
-            {
-              id: data.photoId || String(Date.now() + i),
-              filename: file.name,
-              eventName: events.find(e => e.id === selectedEvent)?.name || selectedEvent,
-              uploadDate: new Date().toISOString(),
-              status: data.status === 'success' ? "processed" : "processing",
-              size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-              thumbnail: data.storageUrl || URL.createObjectURL(file),
-              metadata: {
-                camera: "Unknown",
-                location: "Unknown",
-                datetime: new Date().toISOString(),
-              },
-            },
-            ...prev,
-          ])
+          // No longer updating local state immediately, will refetch all photos
         } else {
           setUploadProgress((prev) => ({ ...prev, [file.name]: -1 }))
         }
@@ -288,12 +281,40 @@ export default function PhotographerPage() {
         console.error("[v0] Upload error:", error)
         setUploadProgress((prev) => ({ ...prev, [file.name]: -1 }))
       }
-    }
+    })
 
+    await Promise.all(uploadPromises)
     setIsUploading(false)
+
+    // After all uploads are attempted, refetch all data using the existing loadData function
+    await loadData();
+
     setTimeout(() => {
       clearAllFiles()
     }, 2000)
+  }
+
+  const handleDeletePhoto = async (photoId: string) => {
+    if (!confirm("Are you sure you want to delete this photo? This action cannot be undone.")) {
+      return
+    }
+
+    try {
+      console.log('Deleting photo:', photoId);
+      const response = await apiClient.deletePhoto(photoId);
+      console.log('Delete response:', response);
+
+      if (response.error) {
+        throw new Error(response.error)
+      }
+
+      // Reload data from server to ensure sync
+      await loadData();
+      console.log('Photo deleted and data reloaded');
+    } catch (error) {
+      console.error("[v0] Delete error:", error)
+      alert("Failed to delete photo. Please try again.")
+    }
   }
 
   const formatFileSize = (bytes: number) => {
@@ -653,6 +674,14 @@ export default function PhotographerPage() {
                                   </h3>
                                   <p className="text-sm text-primary font-medium">{photo.eventName}</p>
                                 </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeletePhoto(photo.id)}
+                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
                               </div>
 
                               <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm mt-3">

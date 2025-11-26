@@ -71,4 +71,9 @@ export class MinioService implements OnModuleInit {
     async getFileUrl(objectName: string): Promise<string> {
         return await this.minioClient.presignedGetObject(this.bucketName, objectName, 24 * 60 * 60);
     }
+
+    async deleteFile(objectName: string): Promise<void> {
+        await this.minioClient.removeObject(this.bucketName, objectName);
+        this.logger.log(`Deleted file: ${objectName}`);
+    }
 }

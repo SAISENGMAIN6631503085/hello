@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseInterceptors, UploadedFile, BadRequestException, Delete, Param } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { PhotosService } from './photos.service';
 import { Prisma } from '@prisma/client';
@@ -31,5 +31,10 @@ export class PhotosController {
         }
 
         return this.photosService.uploadAndProcessPhoto(file, eventId);
+    }
+
+    @Delete(':id')
+    async deletePhoto(@Param('id') id: string) {
+        return this.photosService.deletePhoto(id);
     }
 }

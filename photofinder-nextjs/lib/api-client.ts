@@ -90,6 +90,10 @@ export const apiClient = {
 
   // Photos
   getMyPhotos: () => apiCall("/me/my-photos"),
+  deletePhoto: (photoId: string) =>
+    apiCall(`/photos/${photoId}`, {
+      method: "DELETE",
+    }),
   requestPhotoRemoval: (photoId: string, requestType: string, reason?: string) =>
     apiCall("/removal-requests", {
       method: "POST",

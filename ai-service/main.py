@@ -33,7 +33,8 @@ async def extract_faces(file: UploadFile = File(...)):
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
         if img is None:
-            raise HTTPException(status_code=400, detail="Invalid image file")
+            # Return empty array instead of error - image can't be decoded
+            return []
 
         # Detect faces
         faces = model.get(img)
@@ -49,7 +50,9 @@ async def extract_faces(file: UploadFile = File(...)):
         return results
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # Log the error but return empty array
+        print(f"Error processing image: {str(e)}")
+        return []
 
 if __name__ == "__main__":
     import uvicorn

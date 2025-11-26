@@ -71,4 +71,12 @@ export class SearchService implements OnModuleInit {
             .withLimit(limit)
             .do();
     }
+
+    async deleteFace(weaviateId: string) {
+        await this.client.data
+            .deleter()
+            .withClassName('Face')
+            .withId(weaviateId)
+            .do();
+    }
 }
