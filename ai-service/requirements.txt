@@ -6,3 +6,4 @@ opencv-python-headless
 insightface
 onnxruntime
 Pillow
+prometheus-fastapi-instrumentator

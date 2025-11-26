@@ -7,8 +7,12 @@ from pydantic import BaseModel
 from typing import List
 import io
 from PIL import Image
+from prometheus_fastapi_instrumentator import Instrumentator
 
 app = FastAPI(title="Face Search AI Service")
+
+# Initialize Prometheus metrics
+Instrumentator().instrument(app).expose(app)
 
 # Initialize InsightFace
 # 'buffalo_l' is a good balance of speed and accuracy

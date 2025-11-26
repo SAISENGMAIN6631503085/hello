@@ -1,0 +1,249 @@
+{
+    "dashboard": {
+        "id": null,
+        "uid": "5dc3d6f3-ca96-41cc-b4dc-ddd9f9af0176",
+        "title": "PhotoFinder System Overview",
+        "tags": [
+            "modern",
+            "circular",
+            "resized"
+        ],
+        "timezone": "browser",
+        "schemaVersion": 30,
+        "version": 1,
+        "refresh": "5s",
+        "panels": [
+            {
+                "id": 2,
+                "gridPos": {
+                    "h": 6,
+                    "w": 6,
+                    "x": 0,
+                    "y": 0
+                },
+                "type": "stat",
+                "title": "Total Photo Uploads",
+                "targets": [
+                    {
+                        "expr": "sum(photo_uploads_total)"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "color": {
+                            "mode": "fixed",
+                            "fixedColor": "blue"
+                        },
+                        "sparkline": {
+                            "show": true,
+                            "full": true
+                        }
+                    }
+                },
+                "options": {
+                    "graphMode": "area",
+                    "colorMode": "background"
+                }
+            },
+            {
+                "id": 3,
+                "gridPos": {
+                    "h": 6,
+                    "w": 6,
+                    "x": 6,
+                    "y": 0
+                },
+                "type": "stat",
+                "title": "Total Face Searches",
+                "targets": [
+                    {
+                        "expr": "sum(face_search_total)"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "color": {
+                            "mode": "fixed",
+                            "fixedColor": "purple"
+                        },
+                        "sparkline": {
+                            "show": true,
+                            "full": true
+                        }
+                    }
+                },
+                "options": {
+                    "graphMode": "area",
+                    "colorMode": "background"
+                }
+            },
+            {
+                "id": 9,
+                "gridPos": {
+                    "h": 6,
+                    "w": 6,
+                    "x": 12,
+                    "y": 0
+                },
+                "type": "gauge",
+                "title": "CPU Usage",
+                "targets": [
+                    {
+                        "expr": "sum(rate(process_cpu_seconds_total[1m])) * 100"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "min": 0,
+                        "max": 100,
+                        "unit": "percent",
+                        "color": {
+                            "mode": "thresholds"
+                        },
+                        "thresholds": {
+                            "mode": "absolute",
+                            "steps": [
+                                {
+                                    "color": "green",
+                                    "value": null
+                                },
+                                {
+                                    "color": "#EAB839",
+                                    "value": 60
+                                },
+                                {
+                                    "color": "red",
+                                    "value": 80
+                                }
+                            ]
+                        }
+                    }
+                },
+                "options": {
+                    "showThresholdLabels": false,
+                    "showThresholdMarkers": true,
+                    "reduceOptions": {
+                        "calcs": [
+                            "lastNotNull"
+                        ],
+                        "values": false
+                    }
+                }
+            },
+            {
+                "id": 10,
+                "gridPos": {
+                    "h": 6,
+                    "w": 6,
+                    "x": 18,
+                    "y": 0
+                },
+                "type": "gauge",
+                "title": "Memory Usage (MB)",
+                "targets": [
+                    {
+                        "expr": "sum(process_resident_memory_bytes) / 1024 / 1024"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "min": 0,
+                        "unit": "megabytes",
+                        "color": {
+                            "mode": "thresholds"
+                        },
+                        "thresholds": {
+                            "mode": "absolute",
+                            "steps": [
+                                {
+                                    "color": "blue",
+                                    "value": null
+                                },
+                                {
+                                    "color": "orange",
+                                    "value": 1024
+                                },
+                                {
+                                    "color": "red",
+                                    "value": 2048
+                                }
+                            ]
+                        }
+                    }
+                },
+                "options": {
+                    "showThresholdLabels": false,
+                    "showThresholdMarkers": true,
+                    "reduceOptions": {
+                        "calcs": [
+                            "lastNotNull"
+                        ],
+                        "values": false
+                    }
+                }
+            },
+            {
+                "id": 1,
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 0,
+                    "y": 6
+                },
+                "type": "timeseries",
+                "title": "Traffic Volume (Req/sec)",
+                "targets": [
+                    {
+                        "expr": "rate(http_requests_total[1m])",
+                        "legendFormat": "{{method}} {{route}}"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "custom": {
+                            "drawStyle": "line",
+                            "lineInterpolation": "smooth",
+                            "lineWidth": 3,
+                            "fillOpacity": 20,
+                            "gradientMode": "opacity",
+                            "showPoints": "never"
+                        }
+                    }
+                }
+            },
+            {
+                "id": 4,
+                "gridPos": {
+                    "h": 8,
+                    "w": 12,
+                    "x": 12,
+                    "y": 6
+                },
+                "type": "timeseries",
+                "title": "AI Processing Speed (Latency)",
+                "targets": [
+                    {
+                        "expr": "histogram_quantile(0.95, rate(ai_processing_duration_seconds_bucket[5m]))",
+                        "legendFormat": "95th percentile"
+                    }
+                ],
+                "fieldConfig": {
+                    "defaults": {
+                        "color": {
+                            "mode": "palette-classic"
+                        },
+                        "custom": {
+                            "drawStyle": "line",
+                            "lineInterpolation": "smooth",
+                            "lineWidth": 3,
+                            "fillOpacity": 25,
+                            "gradientMode": "scheme",
+                            "showPoints": "never"
+                        }
+                    }
+                }
+            }
+        ]
+    },
+    "overwrite": true
+}

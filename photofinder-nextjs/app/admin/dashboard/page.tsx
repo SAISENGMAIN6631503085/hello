@@ -6,7 +6,7 @@ import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus, Trash2, Activity } from "lucide-react"
 import { apiClient } from "@/lib/api-client"
 
 
@@ -87,13 +87,15 @@ export default function AdminDashboardPage() {
                 <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
                 <p className="text-muted-foreground mt-1">Welcome back, {adminName}</p>
               </div>
-              <Button
-                onClick={() => router.push("/admin/events/create")}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Event
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => router.push("/admin/events/create")}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Event
+                </Button>
+              </div>
             </div>
 
             <div className="grid md:grid-cols-2 gap-4">
@@ -126,6 +128,7 @@ export default function AdminDashboardPage() {
             <TabsList className="bg-card border border-border">
               <TabsTrigger value="events">Events</TabsTrigger>
               <TabsTrigger value="photos">Photos</TabsTrigger>
+              <TabsTrigger value="health">System Health</TabsTrigger>
             </TabsList>
 
             <TabsContent value="events">
@@ -209,6 +212,20 @@ export default function AdminDashboardPage() {
                     </div>
                   )}
                 </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="health">
+              <Card className="border border-border backdrop-blur-sm bg-card/80 overflow-hidden">
+                <div className="h-[605px] w-full bg-muted">
+                  <iframe
+                    src="http://localhost:3002/d/5dc3d6f3-ca96-41cc-b4dc-ddd9f9af0176/photofinder-system-overview?orgId=1&refresh=5s&kiosk"
+                    width="100%"
+                    height="100%"
+                    frameBorder="0"
+                    className="w-full h-full"
+                  ></iframe>
+                </div>
               </Card>
             </TabsContent>
           </Tabs>

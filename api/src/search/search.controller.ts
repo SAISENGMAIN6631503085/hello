@@ -3,6 +3,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { SearchService } from './search.service';
 import { AiService } from '../ai/ai.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { MetricsService } from '../metrics/metrics.service';
 
 @Controller('search')
 export class SearchController {
@@ -10,6 +11,7 @@ export class SearchController {
         private readonly searchService: SearchService,
         private readonly aiService: AiService,
         private readonly prismaService: PrismaService,
+        private readonly metricsService: MetricsService,
     ) { }
 
     @Post('face')
@@ -27,6 +29,7 @@ export class SearchController {
             console.log('2. Embeddings extracted:', embeddings?.length);
 
             if (!embeddings || embeddings.length === 0) {
+                this.metricsService.faceSearchTotal.inc({ status: 'no_face_detected' });
                 return { message: 'No face detected', results: [] };
             }
 
@@ -42,6 +45,7 @@ export class SearchController {
             console.log('5. Faces found:', faces.length);
 
             if (faces.length === 0) {
+                this.metricsService.faceSearchTotal.inc({ status: 'no_matches' });
                 return { message: 'No matches found', results: [] };
             }
 
@@ -77,12 +81,15 @@ export class SearchController {
                 new Map(validResults.map(r => [r.id, r])).values()
             );
 
+            this.metricsService.faceSearchTotal.inc({ status: 'success' });
+
             return {
                 message: `Found ${uniqueResults.length} matches`,
                 results: uniqueResults,
             };
         } catch (error) {
             console.error('Search error:', error);
+            this.metricsService.faceSearchTotal.inc({ status: 'error' });
             throw error;
         }
     }

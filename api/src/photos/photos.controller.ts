@@ -1,11 +1,15 @@
 import { Controller, Get, Post, Body, UseInterceptors, UploadedFile, BadRequestException, Delete, Param } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { PhotosService } from './photos.service';
+import { MetricsService } from '../metrics/metrics.service';
 import { Prisma } from '@prisma/client';
 
 @Controller('photos')
 export class PhotosController {
-    constructor(private readonly photosService: PhotosService) { }
+    constructor(
+        private readonly photosService: PhotosService,
+        private readonly metricsService: MetricsService,
+    ) { }
 
     @Post()
     create(@Body() data: Prisma.PhotoCreateInput) {
@@ -30,7 +34,16 @@ export class PhotosController {
             throw new BadRequestException('Event ID is required');
         }
 
-        return this.photosService.uploadAndProcessPhoto(file, eventId);
+        try {
+            const result = await this.photosService.uploadAndProcessPhoto(file, eventId);
+            // Increment success counter
+            this.metricsService.photoUploadsTotal.inc({ event_id: eventId, status: 'success' });
+            return result;
+        } catch (error) {
+            // Increment failure counter
+            this.metricsService.photoUploadsTotal.inc({ event_id: eventId, status: 'failed' });
+            throw error;
+        }
     }
 
     @Delete(':id')

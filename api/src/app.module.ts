@@ -9,9 +9,11 @@ import { SearchModule } from './search/search.module';
 import { DeliveryModule } from './delivery/delivery.module';
 import { AiModule } from './ai/ai.module';
 import { MinioModule } from './minio/minio.module';
+import { MetricsModule } from './metrics/metrics.module';
 
 @Module({
   imports: [
+    MetricsModule,
     PrismaModule,
     EventsModule,
     PhotosModule,
