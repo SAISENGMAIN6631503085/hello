@@ -71,10 +71,15 @@ export class SearchController {
 
             console.log('8. Final results:', results.length);
 
-            // Filter out nulls and return
+            // Filter out nulls and deduplicate by photo ID (in case photo has multiple faces)
+            const validResults = results.filter(r => r !== null);
+            const uniqueResults = Array.from(
+                new Map(validResults.map(r => [r.id, r])).values()
+            );
+
             return {
-                message: `Found ${results.filter(r => r !== null).length} matches`,
-                results: results.filter(r => r !== null),
+                message: `Found ${uniqueResults.length} matches`,
+                results: uniqueResults,
             };
         } catch (error) {
             console.error('Search error:', error);

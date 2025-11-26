@@ -132,22 +132,27 @@ export default function PhotographerPage() {
       if (Array.isArray(photosData)) {
         const transformedPhotos = photosData.map((photo: any) => {
           const event = safeEvents.find((e: any) => e.id === photo.eventId);
+          const dimensions = photo.width && photo.height ? `${photo.width} × ${photo.height}` : 'N/A';
           return {
             id: photo.id,
             filename: photo.storageUrl.split('/').pop() || 'unknown',
             eventName: event?.name || 'Unknown Event',
             uploadDate: photo.createdAt,
             status: photo.processingStatus.toLowerCase(),
-            size: 'N/A',
+            size: dimensions,
             thumbnail: photo.storageUrl,
             metadata: {
-              camera: 'Unknown',
-              location: 'Unknown',
               datetime: photo.createdAt,
             },
           };
         });
-        setUploadedPhotos(transformedPhotos);
+        
+        // Remove duplicates by ID (just in case)
+        const uniquePhotos = Array.from(
+          new Map(transformedPhotos.map(p => [p.id, p])).values()
+        );
+        
+        setUploadedPhotos(uniquePhotos);
       } else {
         console.error('Photos API returned non-array:', photosData);
         setUploadedPhotos([]);
@@ -692,16 +697,8 @@ export default function PhotographerPage() {
                                   </span>
                                 </div>
                                 <div>
-                                  <span className="text-muted-foreground">Size:</span>
+                                  <span className="text-muted-foreground">Dimensions:</span>
                                   <span className="ml-2 text-foreground">{photo.size}</span>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">Camera:</span>
-                                  <span className="ml-2 text-foreground">{photo.metadata.camera}</span>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">Location:</span>
-                                  <span className="ml-2 text-foreground">{photo.metadata.location}</span>
                                 </div>
                               </div>
 

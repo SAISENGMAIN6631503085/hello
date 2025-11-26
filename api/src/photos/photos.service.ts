@@ -4,6 +4,7 @@ import { MinioService } from '../minio/minio.service';
 import { AiService } from '../ai/ai.service';
 import { SearchService } from '../search/search.service';
 import { Prisma } from '@prisma/client';
+import sharp from 'sharp';
 
 @Injectable()
 export class PhotosService {
@@ -34,22 +35,35 @@ export class PhotosService {
             file.mimetype,
         );
 
-        // 2. Create Photo record
+        // 2. Extract image dimensions
+        let width: number | null = null;
+        let height: number | null = null;
+        try {
+            const metadata = await sharp(file.buffer).metadata();
+            width = metadata.width || null;
+            height = metadata.height || null;
+        } catch (error) {
+            this.logger.warn('Failed to extract image dimensions:', error);
+        }
+
+        // 3. Create Photo record
         const photo = await this.prisma.photo.create({
             data: {
                 eventId,
                 storageUrl,
                 mimeType: file.mimetype,
                 processingStatus: 'PROCESSING',
+                width,
+                height,
             },
         });
 
         try {
-            // 3. Detect faces with AI
+            // 4. Detect faces with AI
             const faces = await this.aiService.extractFaces(file.buffer);
             this.logger.log(`Detected ${faces.length} faces in photo ${photo.id}`);
 
-            // 4. Save each face to DB and Weaviate
+            // 5. Save each face to DB and Weaviate
             for (const faceData of faces) {
                 // Save to Weaviate first
                 const weaviateId = await this.searchService.addFace(
@@ -72,7 +86,7 @@ export class PhotosService {
                 });
             }
 
-            // 5. Update photo status
+            // 6. Update photo status
             await this.prisma.photo.update({
                 where: { id: photo.id },
                 data: { processingStatus: 'COMPLETED' },
