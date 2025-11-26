@@ -8,7 +8,7 @@ import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader, AlertCircle, Camera, Sparkles } from "lucide-react"
-import { PhotoGrid } from "@/components/photo-grid"
+import { SearchResultGrid } from "@/components/search-result-grid"
 import { apiClient } from "@/lib/api-client"
 
 interface SearchResult {
@@ -88,9 +88,11 @@ export default function FaceSearchPage() {
       }
 
       if (data && data.results) {
-        setSearchResults(data.results)
+        // Sort results by confidence (highest match first)
+        const sortedResults = data.results.sort((a: SearchResult, b: SearchResult) => b.confidence - a.confidence);
+        setSearchResults(sortedResults);
       } else {
-        setSearchResults([])
+        setSearchResults([]);
       }
 
       setHasSearched(true)
@@ -196,8 +198,21 @@ export default function FaceSearchPage() {
           {/* Search Results */}
           {hasSearched && (
             <div className="space-y-4">
+              <div className="bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <Sparkles className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-foreground mb-1">AI Match Results</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Found <span className="font-bold text-primary">{searchResults.length}</span> photo{searchResults.length !== 1 ? 's' : ''} where your face was detected.
+                      {searchResults.length > 0 && ' Results are sorted by match confidence (highest first).'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-foreground">Found {searchResults.length} matches</h2>
+                <h2 className="text-2xl font-bold text-foreground">Your Photos</h2>
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -212,7 +227,7 @@ export default function FaceSearchPage() {
               </div>
 
               {searchResults.length > 0 ? (
-                <PhotoGrid photos={searchResults} />
+                <SearchResultGrid photos={searchResults} />
               ) : (
                 <Card className="border border-border">
                   <CardContent className="py-12 text-center">

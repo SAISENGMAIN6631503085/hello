@@ -12,7 +12,7 @@ interface Photo {
   url: string
   eventName: string
   eventDate: string
-  confidence: number
+  confidence?: number
 }
 
 interface PhotoGridProps {
@@ -57,11 +57,6 @@ export function PhotoGrid({ photos }: PhotoGridProps) {
                   <Eye className="w-4 h-4 mr-1" />
                   View
                 </Button>
-              </div>
-
-              {/* Confidence badge */}
-              <div className="absolute top-2 right-2 bg-primary/90 text-primary-foreground text-xs font-semibold px-2 py-1 rounded">
-                {Math.round(photo.confidence * 100)}%
               </div>
             </div>
 

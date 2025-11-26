@@ -1,0 +1,139 @@
+"use client"
+
+import { useState } from "react"
+import Image from "next/image"
+import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Eye, Download, CheckCircle } from "lucide-react"
+import { PhotoDetailModal } from "@/components/photo-detail-modal"
+
+interface Photo {
+  id: string
+  url: string
+  eventName: string
+  eventDate: string
+  confidence: number
+}
+
+interface SearchResultGridProps {
+  photos: Photo[]
+}
+
+export function SearchResultGrid({ photos }: SearchResultGridProps) {
+  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
+  const [showDetail, setShowDetail] = useState(false)
+
+  const getConfidenceBadgeColor = (confidence: number) => {
+    const percent = confidence * 100;
+    if (percent >= 90) return "bg-green-500";
+    if (percent >= 75) return "bg-blue-500";
+    if (percent >= 60) return "bg-yellow-500";
+    return "bg-orange-500";
+  }
+
+  const getConfidenceLabel = (confidence: number) => {
+    const percent = confidence * 100;
+    if (percent >= 90) return "Excellent Match";
+    if (percent >= 75) return "Good Match";
+    if (percent >= 60) return "Fair Match";
+    return "Possible Match";
+  }
+
+  return (
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {photos.map((photo, index) => (
+          <Card
+            key={photo.id}
+            className="overflow-hidden border-2 border-border hover:border-primary hover:shadow-xl transition-all duration-300 cursor-pointer group relative"
+            onClick={() => {
+              setSelectedPhoto(photo)
+              setShowDetail(true)
+            }}
+          >
+            {/* Rank Badge */}
+            {index < 3 && (
+              <div className="absolute top-3 left-3 z-10">
+                <div className="bg-gradient-to-br from-yellow-400 to-orange-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1">
+                  <span className="text-sm">#{index + 1}</span>
+                  {index === 0 && <CheckCircle className="w-3 h-3" />}
+                </div>
+              </div>
+            )}
+
+            <div className="relative aspect-square bg-muted overflow-hidden">
+              <Image
+                src={photo.url || "/placeholder.svg"}
+                alt={photo.eventName}
+                fill
+                className="object-cover group-hover:scale-110 transition-transform duration-500"
+              />
+
+              {/* Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
+
+              {/* Hover Actions */}
+              <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="bg-white/90 hover:bg-white text-black shadow-lg"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setSelectedPhoto(photo)
+                    setShowDetail(true)
+                  }}
+                >
+                  <Eye className="w-4 h-4 mr-1" />
+                  View
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="bg-white/90 hover:bg-white text-black shadow-lg"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    window.open(photo.url, '_blank')
+                  }}
+                >
+                  <Download className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {/* Confidence Badge */}
+              <div className="absolute top-3 right-3 z-10">
+                <div className={`${getConfidenceBadgeColor(photo.confidence)} text-white text-sm font-bold px-3 py-1.5 rounded-full shadow-lg`}>
+                  {Math.round(photo.confidence * 100)}%
+                </div>
+              </div>
+
+              {/* Bottom Info Bar */}
+              <div className="absolute bottom-0 left-0 right-0 p-4">
+                <div className="space-y-1">
+                  <div className={`inline-flex items-center gap-1.5 ${getConfidenceBadgeColor(photo.confidence)} bg-opacity-90 text-white text-xs font-semibold px-2.5 py-1 rounded-full`}>
+                    <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                    {getConfidenceLabel(photo.confidence)}
+                  </div>
+                  <p className="font-bold text-white text-lg drop-shadow-lg line-clamp-1">
+                    {photo.eventName}
+                  </p>
+                  <p className="text-xs text-white/90 drop-shadow">
+                    {new Date(photo.eventDate).toLocaleDateString('en-US', { 
+                      year: 'numeric', 
+                      month: 'short', 
+                      day: 'numeric' 
+                    })}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {selectedPhoto && (
+        <PhotoDetailModal photo={selectedPhoto} isOpen={showDetail} onClose={() => setShowDetail(false)} />
+      )}
+    </>
+  )
+}
