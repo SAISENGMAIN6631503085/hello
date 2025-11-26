@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Eye, Download, CheckCircle } from "lucide-react"
+import { Eye, Download, CheckCircle, Heart } from "lucide-react"
 import { PhotoDetailModal } from "@/components/photo-detail-modal"
 
 interface Photo {
@@ -22,6 +22,31 @@ interface SearchResultGridProps {
 export function SearchResultGrid({ photos }: SearchResultGridProps) {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
   const [showDetail, setShowDetail] = useState(false)
+  const [savedPhotoIds, setSavedPhotoIds] = useState<string[]>([])
+
+  useEffect(() => {
+    // Load saved photos from localStorage
+    const saved = JSON.parse(localStorage.getItem("saved_photos") || "[]")
+    setSavedPhotoIds(saved)
+  }, [])
+
+  const handleSavePhoto = (photoId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+
+    const currentSaved = JSON.parse(localStorage.getItem("saved_photos") || "[]")
+
+    if (currentSaved.includes(photoId)) {
+      // Remove from saved
+      const updated = currentSaved.filter((id: string) => id !== photoId)
+      localStorage.setItem("saved_photos", JSON.stringify(updated))
+      setSavedPhotoIds(updated)
+    } else {
+      // Add to saved
+      const updated = [...currentSaved, photoId]
+      localStorage.setItem("saved_photos", JSON.stringify(updated))
+      setSavedPhotoIds(updated)
+    }
+  }
 
   const getConfidenceBadgeColor = (confidence: number) => {
     const percent = confidence * 100;
@@ -77,6 +102,15 @@ export function SearchResultGrid({ photos }: SearchResultGridProps) {
                 <Button
                   size="sm"
                   variant="secondary"
+                  className={`${savedPhotoIds.includes(photo.id) ? 'bg-primary hover:bg-primary/90 text-primary-foreground' : 'bg-white/90 hover:bg-white text-black'} shadow-lg`}
+                  onClick={(e) => handleSavePhoto(photo.id, e)}
+                >
+                  <Heart className={`w-4 h-4 mr-1 ${savedPhotoIds.includes(photo.id) ? 'fill-current' : ''}`} />
+                  {savedPhotoIds.includes(photo.id) ? 'Saved' : 'Save'}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
                   className="bg-white/90 hover:bg-white text-black shadow-lg"
                   onClick={(e) => {
                     e.stopPropagation()
@@ -118,10 +152,10 @@ export function SearchResultGrid({ photos }: SearchResultGridProps) {
                     {photo.eventName}
                   </p>
                   <p className="text-xs text-white/90 drop-shadow">
-                    {new Date(photo.eventDate).toLocaleDateString('en-US', { 
-                      year: 'numeric', 
-                      month: 'short', 
-                      day: 'numeric' 
+                    {new Date(photo.eventDate).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
                     })}
                   </p>
                 </div>

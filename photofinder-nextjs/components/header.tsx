@@ -26,20 +26,33 @@ export function Header({ showLogout = false, userRole = "student" }: HeaderProps
   const [userEmail, setUserEmail] = useState("")
 
   useEffect(() => {
-    const storedName = localStorage.getItem("user_name")
-    const storedId = localStorage.getItem("university_id")
-    const storedEmail = localStorage.getItem("user_email") || "student@mfu.ac.th"
-    if (storedName) setUserName(storedName)
-    if (storedId) setUniversityId(storedId)
-    setUserEmail(storedEmail)
-  }, [])
+    if (userRole === "admin") {
+      const storedName = localStorage.getItem("admin_name")
+      const storedEmail = "admin@university.edu" // Default or from storage if you add it
+      if (storedName) setUserName(storedName)
+      setUserEmail(storedEmail)
+    } else {
+      const storedName = localStorage.getItem("user_name")
+      const storedId = localStorage.getItem("university_id")
+      const storedEmail = localStorage.getItem("user_email") || "student@mfu.ac.th"
+      if (storedName) setUserName(storedName)
+      if (storedId) setUniversityId(storedId)
+      setUserEmail(storedEmail)
+    }
+  }, [userRole])
 
   const handleLogout = () => {
-    localStorage.removeItem("auth_token")
-    localStorage.removeItem("user_name")
-    localStorage.removeItem("university_id")
-    localStorage.removeItem("user_email")
-    router.push("/")
+    if (userRole === "admin") {
+      localStorage.removeItem("admin_token")
+      localStorage.removeItem("admin_name")
+      router.push("/admin/login")
+    } else {
+      localStorage.removeItem("auth_token")
+      localStorage.removeItem("user_name")
+      localStorage.removeItem("university_id")
+      localStorage.removeItem("user_email")
+      router.push("/")
+    }
   }
 
   return (

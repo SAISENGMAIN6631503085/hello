@@ -4,7 +4,7 @@ import { useState } from "react"
 import Image from "next/image"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Eye } from "lucide-react"
+import { Eye, Trash2 } from "lucide-react"
 import { PhotoDetailModal } from "@/components/photo-detail-modal"
 
 interface Photo {
@@ -17,9 +17,10 @@ interface Photo {
 
 interface PhotoGridProps {
   photos: Photo[]
+  onRemove?: (photoId: string) => void
 }
 
-export function PhotoGrid({ photos }: PhotoGridProps) {
+export function PhotoGrid({ photos, onRemove }: PhotoGridProps) {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
   const [showDetail, setShowDetail] = useState(false)
 
@@ -57,6 +58,21 @@ export function PhotoGrid({ photos }: PhotoGridProps) {
                   <Eye className="w-4 h-4 mr-1" />
                   View
                 </Button>
+                {onRemove && (
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (confirm("Remove this photo from My Photos?")) {
+                        onRemove(photo.id)
+                      }
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Remove
+                  </Button>
+                )}
               </div>
             </div>
 

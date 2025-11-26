@@ -5,8 +5,7 @@ import { useEffect, useState } from "react"
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Search, Sparkles } from "lucide-react"
+import { Sparkles } from "lucide-react"
 import { PhotoGrid } from "@/components/photo-grid"
 
 interface Photo {
@@ -22,7 +21,7 @@ export default function DashboardPage() {
   const [userName, setUserName] = useState("")
   const [universityId, setUniversityId] = useState("")
   const [userEmail, setUserEmail] = useState("")
-  const [allPhotos, setAllPhotos] = useState<Photo[]>([])
+  const [savedPhotos, setSavedPhotos] = useState<Photo[]>([])
   const [selectedFilter, setSelectedFilter] = useState("all")
   const [isLoading, setIsLoading] = useState(true)
 
@@ -40,40 +39,58 @@ export default function DashboardPage() {
     if (storedId) setUniversityId(storedId)
     setUserEmail(storedEmail)
 
-    // Fetch real events and photos from backend
-    const loadData = async () => {
+    // Load saved photos from localStorage
+    const loadSavedPhotos = async () => {
       try {
+        const savedPhotoIds = JSON.parse(localStorage.getItem("saved_photos") || "[]")
+
+        if (savedPhotoIds.length === 0) {
+          setIsLoading(false)
+          return
+        }
+
         const eventsRes = await fetch('http://localhost:3000/events')
         const eventsData = await eventsRes.json()
 
         const photosRes = await fetch('http://localhost:3000/photos')
         const photosData = await photosRes.json()
 
-        // Transform backend data to match frontend format
-        const transformedPhotos = photosData.map((photo: any) => {
-          const event = eventsData.find((e: any) => e.id === photo.eventId)
-          return {
-            id: photo.id,
-            url: photo.storageUrl,
-            eventName: event?.name || 'Unknown Event',
-            eventDate: event?.date || photo.createdAt,
-            confidence: 0.95, // Placeholder since we don't have this data yet
-          }
-        })
+        // Only show photos that are in the saved list
+        const transformedPhotos = photosData
+          .filter((photo: any) => savedPhotoIds.includes(photo.id))
+          .map((photo: any) => {
+            const event = eventsData.find((e: any) => e.id === photo.eventId)
+            return {
+              id: photo.id,
+              url: photo.storageUrl,
+              eventName: event?.name || 'Unknown Event',
+              eventDate: event?.date || photo.createdAt,
+              confidence: 0.95,
+            }
+          })
 
-        setAllPhotos(transformedPhotos)
+        setSavedPhotos(transformedPhotos)
         setIsLoading(false)
       } catch (err) {
-        console.error('Failed to load data:', err)
+        console.error('Failed to load saved photos:', err)
         setIsLoading(false)
       }
     }
 
-    loadData()
+    loadSavedPhotos()
   }, [router])
 
-  const filteredPhotos = selectedFilter === "all" ? allPhotos : allPhotos.filter((p) => p.eventName === selectedFilter)
-  const events = [...new Set(allPhotos.map((p) => p.eventName))]
+  const handleRemovePhoto = (photoId: string) => {
+    const currentSaved = JSON.parse(localStorage.getItem("saved_photos") || "[]")
+    const updated = currentSaved.filter((id: string) => id !== photoId)
+    localStorage.setItem("saved_photos", JSON.stringify(updated))
+
+    // Update local state
+    setSavedPhotos(savedPhotos.filter(p => p.id !== photoId))
+  }
+
+  const filteredPhotos = selectedFilter === "all" ? savedPhotos : savedPhotos.filter((p) => p.eventName === selectedFilter)
+  const events = [...new Set(savedPhotos.map((p) => p.eventName))]
 
   return (
     <>
@@ -84,7 +101,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold text-foreground">My Photos</h1>
-                <p className="text-sm text-muted-foreground mt-1">Discover yourself in campus events</p>
+                <p className="text-sm text-muted-foreground mt-1">Your saved photos from campus events</p>
               </div>
             </div>
             <div className="mt-6">
@@ -100,62 +117,23 @@ export default function DashboardPage() {
           </div>
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Tabs defaultValue="photos" className="space-y-6">
-            <TabsList className="bg-card border border-border">
-              <TabsTrigger value="photos">My Photos ({allPhotos.length})</TabsTrigger>
-              <TabsTrigger value="events">Recent Events ({events.length})</TabsTrigger>
-            </TabsList>
-            <TabsContent value="photos" className="space-y-4">
-              {isLoading ? (
-                <div className="text-center py-12">
-                  <p className="text-muted-foreground">Loading your photos...</p>
-                </div>
-              ) : filteredPhotos.length > 0 ? (
-                <>
-                  {selectedFilter !== "all" && (
-                    <Button variant="ghost" onClick={() => setSelectedFilter("all")} className="text-muted-foreground">
-                      ← Back to all
-                    </Button>
-                  )}
-                  <PhotoGrid photos={filteredPhotos} />
-                </>
-              ) : (
-                <Card className="border border-border">
-                  <CardContent className="py-12 text-center">
-                    <p className="text-muted-foreground">No photos found. Try uploading or using face search.</p>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-            <TabsContent value="events" className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                {events.map((event) => (
-                  <Card
-                    key={event}
-                    className="border border-border cursor-pointer hover:border-primary/50 transition-colors"
-                    onClick={() => {
-                      setSelectedFilter(event)
-                      const photosTab = document.querySelector('[value="photos"]') as HTMLElement
-                      photosTab?.click()
-                    }}
-                  >
-                    <CardContent className="pt-6">
-                      <div className="space-y-3">
-                        <h3 className="font-semibold text-foreground">{event}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {allPhotos.filter((p) => p.eventName === event).length} photos
-                        </p>
-                        <Button size="sm" variant="outline" className="border-border w-full bg-transparent">
-                          <Search className="w-4 h-4 mr-2" />
-                          View Gallery
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-          </Tabs>
+          {isLoading ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Loading your photos...</p>
+            </div>
+          ) : savedPhotos.length > 0 ? (
+            <PhotoGrid photos={savedPhotos} onRemove={handleRemovePhoto} />
+          ) : (
+            <Card className="border border-border">
+              <CardContent className="py-12 text-center">
+                <p className="text-muted-foreground mb-4">No saved photos yet.</p>
+                <Button onClick={() => router.push("/search")} variant="outline">
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Start Face Search
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </main>
     </>

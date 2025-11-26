@@ -11,7 +11,7 @@ interface Photo {
   url: string
   eventName: string
   eventDate: string
-  confidence: number
+  confidence?: number
 }
 
 interface PhotoDetailModalProps {
@@ -36,9 +36,11 @@ export function PhotoDetailModal({ photo, isOpen, onClose }: PhotoDetailModalPro
           {/* Photo Display */}
           <div className="relative w-full aspect-square bg-muted rounded-lg overflow-hidden">
             <Image src={photo.url || "/placeholder.svg"} alt={photo.eventName} fill className="object-cover" />
-            <div className="absolute top-3 right-3 bg-primary/90 text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full">
-              {Math.round(photo.confidence * 100)}% match
-            </div>
+            {photo.confidence && (
+              <div className="absolute top-3 right-3 bg-primary/90 text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full">
+                {Math.round(photo.confidence * 100)}% match
+              </div>
+            )}
           </div>
 
           {/* Photo Info */}

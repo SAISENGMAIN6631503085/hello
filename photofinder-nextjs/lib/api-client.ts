@@ -89,6 +89,7 @@ export const apiClient = {
   },
 
   // Photos
+  getAllPhotos: () => apiCall("/photos"),
   getMyPhotos: () => apiCall("/me/my-photos"),
   deletePhoto: (photoId: string) =>
     apiCall(`/photos/${photoId}`, {

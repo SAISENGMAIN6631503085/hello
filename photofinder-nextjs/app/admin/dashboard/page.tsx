@@ -6,42 +6,16 @@ import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-} from "recharts"
-import { Plus, Eye, Edit, AlertCircle } from "lucide-react"
+import { Plus, Trash2 } from "lucide-react"
+import { apiClient } from "@/lib/api-client"
 
-interface Event {
-  id: string
-  name: string
-  date: string
-  status: "upcoming" | "active" | "completed"
-  photoCount: number
-  optInRate: number
-}
 
-const chartData = [
-  { name: "Mon", optIn: 65, optOut: 35, searches: 45 },
-  { name: "Tue", optIn: 72, optOut: 28, searches: 52 },
-  { name: "Wed", optIn: 68, optOut: 32, searches: 48 },
-  { name: "Thu", optIn: 75, optOut: 25, searches: 61 },
-  { name: "Fri", optIn: 82, optOut: 18, searches: 72 },
-  { name: "Sat", optIn: 78, optOut: 22, searches: 68 },
-]
 
 export default function AdminDashboardPage() {
   const router = useRouter()
   const [adminName, setAdminName] = useState("")
-  const [events, setEvents] = useState<Event[]>([])
+  const [events, setEvents] = useState<any[]>([])
+  const [photos, setPhotos] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -56,59 +30,56 @@ export default function AdminDashboardPage() {
       setAdminName(storedName)
     }
 
-    setTimeout(() => {
-      setEvents([
-        {
-          id: "1",
-          name: "Spring Orientation 2024",
-          date: "2024-03-15",
-          status: "completed",
-          photoCount: 2145,
-          optInRate: 78,
-        },
-        {
-          id: "2",
-          name: "Sports Day 2024",
-          date: "2024-04-20",
-          status: "completed",
-          photoCount: 1823,
-          optInRate: 82,
-        },
-        {
-          id: "3",
-          name: "Campus Concert",
-          date: "2024-05-10",
-          status: "active",
-          photoCount: 3421,
-          optInRate: 75,
-        },
-      ])
-      setIsLoading(false)
-    }, 800)
+    const fetchData = async () => {
+      try {
+        const [eventsRes, photosRes] = await Promise.all([
+          apiClient.getEvents(),
+          apiClient.getAllPhotos()
+        ])
+
+        if (eventsRes.data && Array.isArray(eventsRes.data)) {
+          setEvents(eventsRes.data)
+        }
+        if (photosRes.data && Array.isArray(photosRes.data)) {
+          setPhotos(photosRes.data)
+        }
+      } catch (error) {
+        console.error("Failed to fetch data", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchData()
   }, [router])
 
-  const handleLogout = () => {
-    localStorage.removeItem("admin_token")
-    localStorage.removeItem("admin_name")
-    router.push("/")
+  const handleDeletePhoto = async (photoId: string) => {
+    if (!confirm("Are you sure you want to delete this photo?")) return
+
+    try {
+      await apiClient.deletePhoto(photoId)
+      setPhotos(photos.filter(p => p.id !== photoId))
+    } catch (error) {
+      console.error("Failed to delete photo", error)
+      alert("Failed to delete photo")
+    }
   }
 
   const getStatusBadge = (status: string) => {
     const styles = {
-      upcoming: "bg-secondary text-secondary-foreground",
-      active: "bg-primary text-primary-foreground",
-      completed: "bg-muted text-muted-foreground",
+      DRAFT: "bg-secondary text-secondary-foreground",
+      PUBLISHED: "bg-primary text-primary-foreground",
+      ARCHIVED: "bg-muted text-muted-foreground",
     }
-    return styles[status as keyof typeof styles] || styles.upcoming
+    return styles[status as keyof typeof styles] || styles.DRAFT
   }
 
-  const activeEvents = events.filter((e) => e.status === "active").length
-  const avgOptIn = Math.round(events.reduce((sum, e) => sum + e.optInRate, 0) / events.length)
+  const activeEvents = events.filter((e) => e.status === "PUBLISHED").length
 
   return (
     <>
-      <Header showLogout />
-      <main className="min-h-screen bg-gradient-to-b from-background to-secondary/5">
+      <Header userRole="admin" />
+      <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
         <div className="bg-card border-b border-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
@@ -125,44 +96,24 @@ export default function AdminDashboardPage() {
               </Button>
             </div>
 
-            <div className="grid md:grid-cols-4 gap-4">
-              <Card className="border border-border">
+            <div className="grid md:grid-cols-2 gap-4">
+              <Card className="border border-border backdrop-blur-sm bg-card/80">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Active Events</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold text-foreground">{activeEvents}</div>
-                  <p className="text-xs text-muted-foreground mt-1">currently running</p>
+                  <p className="text-xs text-muted-foreground mt-1">currently published</p>
                 </CardContent>
               </Card>
 
-              <Card className="border border-border">
+              <Card className="border border-border backdrop-blur-sm bg-card/80">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Opt-in %</CardTitle>
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Events</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-foreground">{avgOptIn}%</div>
-                  <p className="text-xs text-muted-foreground mt-1">average rate</p>
-                </CardContent>
-              </Card>
-
-              <Card className="border border-border">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Email CTR</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-foreground">34%</div>
-                  <p className="text-xs text-muted-foreground mt-1">click through</p>
-                </CardContent>
-              </Card>
-
-              <Card className="border border-border">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Search Latency</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-foreground">245ms</div>
-                  <p className="text-xs text-muted-foreground mt-1">avg response</p>
+                  <div className="text-3xl font-bold text-foreground">{events.length}</div>
+                  <p className="text-xs text-muted-foreground mt-1">all time</p>
                 </CardContent>
               </Card>
             </div>
@@ -173,182 +124,90 @@ export default function AdminDashboardPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Tabs defaultValue="events" className="space-y-6">
             <TabsList className="bg-card border border-border">
-              <TabsTrigger value="events">Event Console</TabsTrigger>
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
-              <TabsTrigger value="moderation">Moderation Queue</TabsTrigger>
-              <TabsTrigger value="security">Security & Logs</TabsTrigger>
+              <TabsTrigger value="events">Events</TabsTrigger>
+              <TabsTrigger value="photos">Photos</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="events" className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4 mb-6">
-                <Card className="border border-border bg-secondary/10 border-secondary/20">
-                  <CardContent className="pt-6">
-                    <h3 className="font-semibold text-foreground mb-2">Upload Batches</h3>
-                    <p className="text-sm text-muted-foreground">Review and manage uploaded photo batches</p>
-                    <Button size="sm" variant="outline" className="border-border mt-4 bg-transparent">
-                      View Uploads
-                    </Button>
-                  </CardContent>
-                </Card>
-                <Card className="border border-border bg-primary/10 border-primary/20">
-                  <CardContent className="pt-6">
-                    <h3 className="font-semibold text-foreground mb-2">Face Search Control</h3>
-                    <p className="text-sm text-muted-foreground">Enable/disable face search per event</p>
-                    <Button size="sm" variant="outline" className="border-border mt-4 bg-transparent">
-                      Configure
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {events.map((event) => (
-                <Card key={event.id} className="border border-border">
-                  <CardContent className="pt-6">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-semibold text-foreground">{event.name}</h3>
-                          <span
-                            className={`text-xs font-semibold px-2 py-1 rounded capitalize ${getStatusBadge(event.status)}`}
-                          >
-                            {event.status}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-3 gap-4 text-sm">
-                          <div>
-                            <p className="text-muted-foreground">Date</p>
-                            <p className="font-medium text-foreground">{new Date(event.date).toLocaleDateString()}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Photos Ingested</p>
-                            <p className="font-medium text-foreground">{event.photoCount}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Opt-in Rate</p>
-                            <p className="font-medium text-foreground">{event.optInRate}%</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="outline" className="border-border bg-transparent">
-                          <Eye className="w-4 h-4 mr-1" />
-                          View
-                        </Button>
-                        <Button size="sm" variant="outline" className="border-border bg-transparent">
-                          <Edit className="w-4 h-4 mr-1" />
-                          Edit
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </TabsContent>
-
-            <TabsContent value="analytics" className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                <Card className="border border-border">
-                  <CardHeader>
-                    <CardTitle>Opt-in Rate Trend</CardTitle>
-                    <CardDescription>Track consent uptake over time</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                        <XAxis stroke="var(--color-muted-foreground)" />
-                        <YAxis stroke="var(--color-muted-foreground)" />
-                        <Tooltip />
-                        <Legend />
-                        <Line type="monotone" dataKey="optIn" stroke="var(--color-primary)" strokeWidth={2} />
-                        <Line type="monotone" dataKey="optOut" stroke="var(--color-destructive)" strokeWidth={2} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-
-                <Card className="border border-border">
-                  <CardHeader>
-                    <CardTitle>Email CTR & Link Opens</CardTitle>
-                    <CardDescription>Engagement metrics by event</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                        <XAxis stroke="var(--color-muted-foreground)" />
-                        <YAxis stroke="var(--color-muted-foreground)" />
-                        <Tooltip />
-                        <Bar dataKey="searches" fill="var(--color-primary)" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="moderation" className="space-y-4">
-              <Card className="border border-border">
+            <TabsContent value="events">
+              <Card className="border border-border backdrop-blur-sm bg-card/80">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <AlertCircle className="w-5 h-5 text-primary" />
-                    Low Confidence Matches
-                  </CardTitle>
-                  <CardDescription>Matches below 70% confidence threshold</CardDescription>
-                </CardHeader>
-                <CardContent className="text-center py-8">
-                  <p className="text-muted-foreground">No flagged matches found</p>
-                </CardContent>
-              </Card>
-
-              <Card className="border border-border">
-                <CardHeader>
-                  <CardTitle>Blur/Removal Requests</CardTitle>
-                  <CardDescription>User-requested photo modifications</CardDescription>
-                </CardHeader>
-                <CardContent className="text-center py-8">
-                  <p className="text-muted-foreground">No pending removal requests</p>
-                </CardContent>
-              </Card>
-
-              <Card className="border border-border">
-                <CardHeader>
-                  <CardTitle>User Reports</CardTitle>
-                  <CardDescription>Reported content from users</CardDescription>
-                </CardHeader>
-                <CardContent className="text-center py-8">
-                  <p className="text-muted-foreground">No reports submitted</p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="security" className="space-y-4">
-              <Card className="border border-border">
-                <CardHeader>
-                  <CardTitle>PDPA Consent Logs</CardTitle>
-                  <CardDescription>Audit trail of consent management</CardDescription>
+                  <CardTitle>Events</CardTitle>
+                  <CardDescription>Manage your campus events</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3 text-sm">
-                    <div className="p-3 bg-card rounded border border-border/50">
-                      <p className="font-medium text-foreground">User ID: U12345</p>
-                      <p className="text-muted-foreground">Opted in • 2024-11-06 14:32 UTC</p>
+                  {isLoading ? (
+                    <div className="text-center py-8 text-muted-foreground">Loading events...</div>
+                  ) : events.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">No events found. Create one to get started.</div>
+                  ) : (
+                    <div className="space-y-4">
+                      {events.map((event) => (
+                        <div key={event.id} className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-4 border border-border rounded-lg bg-card/50">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className="font-semibold text-foreground">{event.name}</h3>
+                              <span
+                                className={`text-xs font-semibold px-2 py-1 rounded capitalize ${getStatusBadge(event.status)}`}
+                              >
+                                {event.status.toLowerCase()}
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <p className="text-muted-foreground">Date</p>
+                                <p className="font-medium text-foreground">{new Date(event.date).toLocaleDateString()}</p>
+                              </div>
+                              <div>
+                                <p className="text-muted-foreground">Created</p>
+                                <p className="font-medium text-foreground">{new Date(event.createdAt).toLocaleDateString()}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <div className="p-3 bg-card rounded border border-border/50">
-                      <p className="font-medium text-foreground">User ID: U12346</p>
-                      <p className="text-muted-foreground">Opted out • 2024-11-06 13:15 UTC</p>
-                    </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
+            </TabsContent>
 
-              <Card className="border border-border">
+            <TabsContent value="photos">
+              <Card className="border border-border backdrop-blur-sm bg-card/80">
                 <CardHeader>
-                  <CardTitle>Moderation Actions</CardTitle>
-                  <CardDescription>Audit trail of admin moderation</CardDescription>
+                  <CardTitle>All Photos</CardTitle>
+                  <CardDescription>Manage all uploaded photos ({photos.length})</CardDescription>
                 </CardHeader>
-                <CardContent className="text-center py-8">
-                  <p className="text-muted-foreground">No recent moderation actions</p>
+                <CardContent>
+                  {isLoading ? (
+                    <div className="text-center py-8 text-muted-foreground">Loading photos...</div>
+                  ) : photos.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">No photos found.</div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                      {photos.map((photo) => (
+                        <div key={photo.id} className="group relative aspect-square rounded-lg overflow-hidden bg-muted border border-border">
+                          <img
+                            src={photo.thumbnailUrl || photo.storageUrl}
+                            alt="Event photo"
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeletePhoto(photo.id)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/60 text-white text-xs truncate">
+                            {new Date(photo.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

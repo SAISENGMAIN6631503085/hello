@@ -41,71 +41,68 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <>
-      <Header />
-      <main className="min-h-screen bg-background flex items-center justify-center px-4">
-        <Card className="w-full max-w-md border border-border">
-          <CardHeader className="space-y-2">
-            <div className="flex items-center gap-2 mb-2">
-              <Lock className="w-5 h-5 text-primary" />
-              <span className="text-sm font-semibold text-primary uppercase">Admin</span>
+    <main className="min-h-screen bg-gradient-to-b from-background to-muted/20 flex items-center justify-center px-4">
+      <Card className="w-full max-w-md border border-border backdrop-blur-sm bg-card/80">
+        <CardHeader className="space-y-2">
+          <div className="flex items-center gap-2 mb-2">
+            <Lock className="w-5 h-5 text-primary" />
+            <span className="text-sm font-semibold text-primary uppercase">Admin</span>
+          </div>
+          <CardTitle className="text-2xl">Admin Console</CardTitle>
+          <CardDescription>Sign in to manage events and photos</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleLogin} className="space-y-4">
+            {error && (
+              <div className="flex gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-destructive">{error}</p>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-sm font-medium text-foreground">
+                Email
+              </label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="admin@university.edu"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="border-border"
+              />
             </div>
-            <CardTitle className="text-2xl">Admin Console</CardTitle>
-            <CardDescription>Sign in to manage events and photos</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              {error && (
-                <div className="flex gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-                  <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-destructive">{error}</p>
-                </div>
-              )}
 
-              <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium text-foreground">
-                  Email
-                </label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="admin@university.edu"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="border-border"
-                />
-              </div>
+            <div className="space-y-2">
+              <label htmlFor="password" className="text-sm font-medium text-foreground">
+                Password
+              </label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="border-border"
+              />
+            </div>
 
-              <div className="space-y-2">
-                <label htmlFor="password" className="text-sm font-medium text-foreground">
-                  Password
-                </label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="border-border"
-                />
-              </div>
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6"
+              size="lg"
+            >
+              {isLoading ? "Signing in..." : "Sign In"}
+            </Button>
 
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6"
-                size="lg"
-              >
-                {isLoading ? "Signing in..." : "Sign In"}
-              </Button>
-
-              <p className="text-xs text-muted-foreground text-center">
-                Demo credentials: admin@university.edu / admin123
-              </p>
-            </form>
-          </CardContent>
-        </Card>
-      </main>
-    </>
+            <p className="text-xs text-muted-foreground text-center">
+              Demo credentials: admin@university.edu / admin123
+            </p>
+          </form>
+        </CardContent>
+      </Card>
+    </main>
   )
 }

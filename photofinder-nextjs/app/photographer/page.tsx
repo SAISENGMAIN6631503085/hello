@@ -35,65 +35,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { apiClient } from "@/lib/api-client"
 
-// Mock uploaded photos data
-const mockUploadedPhotos = [
-  {
-    id: "1",
-    filename: "IMG_0234.jpg",
-    eventName: "Annual Sports Day 2025",
-    uploadDate: "2025-01-15T14:30:00",
-    status: "processed",
-    size: "4.2 MB",
-    thumbnail: "/student-at-campus-event-photo.jpg",
-    metadata: {
-      camera: "Canon EOS R5",
-      location: "Stadium A",
-      datetime: "2025-01-14 10:23:45",
-    },
-  },
-  {
-    id: "2",
-    filename: "IMG_0235.jpg",
-    eventName: "Annual Sports Day 2025",
-    uploadDate: "2025-01-15T14:30:00",
-    status: "processing",
-    size: "3.8 MB",
-    thumbnail: "/group-of-students-at-outdoor-event.jpg",
-    metadata: {
-      camera: "Canon EOS R5",
-      location: "Stadium A",
-      datetime: "2025-01-14 10:24:12",
-    },
-  },
-  {
-    id: "3",
-    filename: "IMG_0236.jpg",
-    eventName: "Cultural Festival",
-    uploadDate: "2025-01-14T16:20:00",
-    status: "processed",
-    size: "5.1 MB",
-    thumbnail: "/students-at-concert-event.jpg",
-    metadata: {
-      camera: "Canon EOS R5",
-      location: "Main Hall",
-      datetime: "2025-01-13 18:45:22",
-    },
-  },
-  {
-    id: "4",
-    filename: "IMG_0237.jpg",
-    eventName: "Cultural Festival",
-    uploadDate: "2025-01-14T16:20:00",
-    status: "failed",
-    size: "2.9 MB",
-    thumbnail: "/students-at-graduation-ceremony.jpg",
-    metadata: {
-      camera: "Canon EOS R5",
-      location: "Main Hall",
-      datetime: "2025-01-13 18:46:55",
-    },
-  },
-]
+
 
 export default function PhotographerPage() {
   const router = useRouter()
@@ -111,9 +53,6 @@ export default function PhotographerPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({})
-  const [enableExif, setEnableExif] = useState(true)
-  const [enableDedup, setEnableDedup] = useState(true)
-  const [enableCompress, setEnableCompress] = useState(false)
   const [events, setEvents] = useState<Array<{ id: string; name: string }>>([])
   // Fetch real events and photos from backend
   const loadData = async () => {
@@ -146,12 +85,12 @@ export default function PhotographerPage() {
             },
           };
         });
-        
+
         // Remove duplicates by ID (just in case)
         const uniquePhotos = Array.from(
           new Map(transformedPhotos.map(p => [p.id, p])).values()
         );
-        
+
         setUploadedPhotos(uniquePhotos);
       } else {
         console.error('Photos API returned non-array:', photosData);
@@ -519,8 +458,7 @@ export default function PhotographerPage() {
 
                           <input
                             type="file"
-                            webkitdirectory=""
-                            directory=""
+                            {...({ webkitdirectory: "", directory: "" } as any)}
                             multiple
                             onChange={handleFolderSelect}
                             className="hidden"
@@ -588,41 +526,7 @@ export default function PhotographerPage() {
                     </CardContent>
                   </Card>
 
-                  <Card className="border border-border">
-                    <CardHeader>
-                      <CardTitle>Quality Check</CardTitle>
-                      <CardDescription>Configure upload settings</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <label className="flex items-center gap-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={enableExif}
-                          onChange={(e) => setEnableExif(e.target.checked)}
-                          className="w-4 h-4"
-                        />
-                        <span className="text-sm text-foreground">Extract EXIF metadata</span>
-                      </label>
-                      <label className="flex items-center gap-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={enableDedup}
-                          onChange={(e) => setEnableDedup(e.target.checked)}
-                          className="w-4 h-4"
-                        />
-                        <span className="text-sm text-foreground">Enable de-duplication</span>
-                      </label>
-                      <label className="flex items-center gap-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={enableCompress}
-                          onChange={(e) => setEnableCompress(e.target.checked)}
-                          className="w-4 h-4"
-                        />
-                        <span className="text-sm text-foreground">Compress high-resolution images</span>
-                      </label>
-                    </CardContent>
-                  </Card>
+
 
                   <Button
                     onClick={handleBatchUpload}

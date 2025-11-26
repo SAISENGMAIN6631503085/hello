@@ -24,9 +24,7 @@ export default function CreateEventPage() {
   const [formData, setFormData] = useState({
     name: "",
     date: "",
-    status: "upcoming" as "upcoming" | "active" | "completed",
-    privacyLevel: "public" as "public" | "private",
-    faceSearchEnabled: true,
+    status: "DRAFT" as "DRAFT" | "PUBLISHED" | "ARCHIVED",
   })
 
   useEffect(() => {
@@ -70,19 +68,18 @@ export default function CreateEventPage() {
       const today = new Date()
       today.setHours(0, 0, 0, 0)
 
-      if (formData.status === "upcoming" && selectedDate < today) {
-        setError("Upcoming events cannot have dates in the past")
-        setIsSubmitting(false)
-        return
-      }
+      // Generate slug from name
+      const slug = formData.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)+/g, "") + "-" + Date.now().toString().slice(-4)
 
       // Call API to create event
       const response = await apiClient.createEvent({
         name: formData.name.trim(),
-        date: formData.date,
+        date: new Date(formData.date).toISOString(),
         status: formData.status,
-        privacyLevel: formData.privacyLevel,
-        faceSearchEnabled: formData.faceSearchEnabled,
+        slug: slug,
       })
 
       if (response.error) {
@@ -112,8 +109,8 @@ export default function CreateEventPage() {
 
   return (
     <>
-      <Header showLogout />
-      <main className="min-h-screen bg-gradient-to-b from-background to-secondary/5">
+      <Header userRole="admin" />
+      <main className="min-h-screen bg-gradient-to-b from-background to-muted/20">
         <div className="max-w-2xl mx-auto px-4 py-8">
           {/* Header */}
           <div className="mb-8">
@@ -144,7 +141,7 @@ export default function CreateEventPage() {
           )}
 
           {/* Form Card */}
-          <Card className="border border-border">
+          <Card className="border border-border backdrop-blur-sm bg-card/80">
             <CardHeader>
               <CardTitle>Event Details</CardTitle>
               <CardDescription>Configure the basic information for this event</CardDescription>
@@ -198,54 +195,14 @@ export default function CreateEventPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="upcoming">Upcoming</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="DRAFT">Draft</SelectItem>
+                      <SelectItem value="PUBLISHED">Published</SelectItem>
+                      <SelectItem value="ARCHIVED">Archived</SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
-                    Upcoming: Pre-event setup | Active: Currently accepting uploads | Completed: Closed for new uploads
+                    Draft: Not visible | Published: Visible to users | Archived: Read-only
                   </p>
-                </div>
-
-                {/* Privacy Level */}
-                <div className="space-y-2">
-                  <Label htmlFor="privacyLevel" className="text-foreground font-medium">
-                    Privacy Level
-                  </Label>
-                  <Select
-                    value={formData.privacyLevel}
-                    onValueChange={(value) => handleInputChange("privacyLevel", value)}
-                    disabled={isSubmitting}
-                  >
-                    <SelectTrigger className="border-border">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="public">Public - Visible to all users</SelectItem>
-                      <SelectItem value="private">Private - Restricted access</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Control who can view and search photos from this event
-                  </p>
-                </div>
-
-                {/* Face Search Toggle */}
-                <div className="p-4 bg-card/50 rounded-lg border border-border/50 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label className="text-foreground font-medium">Enable Face Search</Label>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Allow users to search for themselves in photos
-                      </p>
-                    </div>
-                    <Switch
-                      checked={formData.faceSearchEnabled}
-                      onCheckedChange={(checked) => handleInputChange("faceSearchEnabled", checked)}
-                      disabled={isSubmitting}
-                    />
-                  </div>
                 </div>
 
                 <div className="flex gap-3 pt-6 border-t border-border">
@@ -278,7 +235,7 @@ export default function CreateEventPage() {
           </Card>
 
           {/* Info Card */}
-          <Card className="border border-border bg-primary/5 border-primary/20 mt-6">
+          <Card className="border border-border bg-primary/5 border-primary/20 mt-6 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="text-base">What happens next?</CardTitle>
             </CardHeader>
