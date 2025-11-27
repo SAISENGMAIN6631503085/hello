@@ -51,7 +51,7 @@ export function PhotoDetailModal({ photo, isOpen, onClose }: PhotoDetailModalPro
 
     setIsSubmitting(true)
     try {
-      const response = await apiClient.requestPhotoRemoval(photo.id, "REMOVAL", userName, reason)
+      const response = await apiClient.requestPhotoRemoval(photo.id, "DELETE", userName, userEmail, reason)
 
       if (response.error) {
         alert("Failed to submit removal request. Please try again.")

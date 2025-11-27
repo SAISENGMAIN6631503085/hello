@@ -39,35 +39,25 @@ export default function DashboardPage() {
     if (storedId) setUniversityId(storedId)
     setUserEmail(storedEmail)
 
-    // Load saved photos from localStorage
+    // Load saved photos from API
     const loadSavedPhotos = async () => {
       try {
-        const savedPhotoIds = JSON.parse(localStorage.getItem("saved_photos") || "[]")
-
-        if (savedPhotoIds.length === 0) {
-          setIsLoading(false)
-          return
+        const userId = storedId || 'guest'
+        
+        const response = await fetch(`http://localhost:3000/saved-photos/${userId}`)
+        if (!response.ok) {
+          throw new Error('Failed to fetch saved photos')
         }
 
-        const eventsRes = await fetch('http://localhost:3000/events')
-        const eventsData = await eventsRes.json()
+        const savedPhotosData = await response.json()
 
-        const photosRes = await fetch('http://localhost:3000/photos')
-        const photosData = await photosRes.json()
-
-        // Only show photos that are in the saved list
-        const transformedPhotos = photosData
-          .filter((photo: any) => savedPhotoIds.includes(photo.id))
-          .map((photo: any) => {
-            const event = eventsData.find((e: any) => e.id === photo.eventId)
-            return {
-              id: photo.id,
-              url: photo.storageUrl,
-              eventName: event?.name || 'Unknown Event',
-              eventDate: event?.date || photo.createdAt,
-              confidence: 0.95,
-            }
-          })
+        const transformedPhotos = savedPhotosData.map((item: any) => ({
+          id: item.photo.id,
+          url: item.photo.storageUrl,
+          eventName: item.photo.event?.name || 'Unknown Event',
+          eventDate: item.photo.event?.date || item.photo.createdAt,
+          confidence: 0.95,
+        }))
 
         setSavedPhotos(transformedPhotos)
         setIsLoading(false)
@@ -80,13 +70,27 @@ export default function DashboardPage() {
     loadSavedPhotos()
   }, [router])
 
-  const handleRemovePhoto = (photoId: string) => {
-    const currentSaved = JSON.parse(localStorage.getItem("saved_photos") || "[]")
-    const updated = currentSaved.filter((id: string) => id !== photoId)
-    localStorage.setItem("saved_photos", JSON.stringify(updated))
+  const handleRemovePhoto = async (photoId: string) => {
+    try {
+      const userId = universityId || 'guest'
+      
+      const response = await fetch(`http://localhost:3000/saved-photos/${userId}/${photoId}`, {
+        method: 'DELETE',
+        headers: {
+          'user-id': userId,
+        },
+      })
 
-    // Update local state
-    setSavedPhotos(savedPhotos.filter(p => p.id !== photoId))
+      if (!response.ok) {
+        throw new Error('Failed to unsave photo')
+      }
+
+      // Update local state
+      setSavedPhotos(savedPhotos.filter(p => p.id !== photoId))
+    } catch (err) {
+      console.error('Failed to unsave photo:', err)
+      alert('Failed to remove photo. Please try again.')
+    }
   }
 
   const filteredPhotos = selectedFilter === "all" ? savedPhotos : savedPhotos.filter((p) => p.eventName === selectedFilter)

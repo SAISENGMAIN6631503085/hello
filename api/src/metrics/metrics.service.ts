@@ -70,4 +70,8 @@ export class MetricsService {
     getMetrics(): Promise<string> {
         return this.register.metrics();
     }
+
+    async getMetricsJson(): Promise<any> {
+        return this.register.getMetricsAsJSON();
+    }
 }

@@ -25,26 +25,58 @@ export function SearchResultGrid({ photos }: SearchResultGridProps) {
   const [savedPhotoIds, setSavedPhotoIds] = useState<string[]>([])
 
   useEffect(() => {
-    // Load saved photos from localStorage
-    const saved = JSON.parse(localStorage.getItem("saved_photos") || "[]")
-    setSavedPhotoIds(saved)
+    // Load saved photos from API
+    const loadSavedPhotos = async () => {
+      try {
+        const userId = localStorage.getItem("university_id") || 'guest'
+        const response = await fetch(`http://localhost:3000/saved-photos/${userId}`)
+        if (response.ok) {
+          const savedPhotos = await response.json()
+          const ids = savedPhotos.map((item: any) => item.photo.id)
+          setSavedPhotoIds(ids)
+        }
+      } catch (err) {
+        console.error('Failed to load saved photos:', err)
+      }
+    }
+    loadSavedPhotos()
   }, [])
 
-  const handleSavePhoto = (photoId: string, e: React.MouseEvent) => {
+  const handleSavePhoto = async (photoId: string, e: React.MouseEvent) => {
     e.stopPropagation()
 
-    const currentSaved = JSON.parse(localStorage.getItem("saved_photos") || "[]")
+    const userId = localStorage.getItem("university_id") || 'guest'
+    const isSaved = savedPhotoIds.includes(photoId)
 
-    if (currentSaved.includes(photoId)) {
-      // Remove from saved
-      const updated = currentSaved.filter((id: string) => id !== photoId)
-      localStorage.setItem("saved_photos", JSON.stringify(updated))
-      setSavedPhotoIds(updated)
-    } else {
-      // Add to saved
-      const updated = [...currentSaved, photoId]
-      localStorage.setItem("saved_photos", JSON.stringify(updated))
-      setSavedPhotoIds(updated)
+    try {
+      if (isSaved) {
+        // Remove from saved
+        const response = await fetch(`http://localhost:3000/saved-photos/${userId}/${photoId}`, {
+          method: 'DELETE',
+          headers: {
+            'user-id': userId,
+          },
+        })
+        if (response.ok) {
+          setSavedPhotoIds(savedPhotoIds.filter((id) => id !== photoId))
+        }
+      } else {
+        // Add to saved
+        const response = await fetch('http://localhost:3000/saved-photos', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'user-id': userId,
+          },
+          body: JSON.stringify({ photoId }),
+        })
+        if (response.ok) {
+          setSavedPhotoIds([...savedPhotoIds, photoId])
+        }
+      }
+    } catch (err) {
+      console.error('Failed to save/unsave photo:', err)
+      alert('Failed to update saved photos. Please try again.')
     }
   }
 

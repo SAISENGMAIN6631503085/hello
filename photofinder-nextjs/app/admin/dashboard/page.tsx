@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
-import { Plus, Trash2, Activity, Search, Pencil } from "lucide-react"
+import { Search, Plus, Calendar, MapPin, Image as ImageIcon, Trash2, LogOut, Settings, BarChart3, Users, Bell, Shield, AlertCircle, CheckCircle2, XCircle, Pencil } from "lucide-react"
+import { PhotoDetailModal } from "@/components/photo-detail-modal"
+import { SystemHealth } from "@/components/system-health"
 import { apiClient } from "@/lib/api-client"
-
-
 
 export default function AdminDashboardPage() {
   const router = useRouter()
@@ -184,7 +184,6 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Main Content */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Tabs defaultValue="events" className="space-y-6">
             <TabsList className="bg-card border border-border">
@@ -390,17 +389,7 @@ export default function AdminDashboardPage() {
             </TabsContent>
 
             <TabsContent value="health">
-              <Card className="border border-border backdrop-blur-sm bg-card/80 overflow-hidden">
-                <div className="h-[605px] w-full bg-muted">
-                  <iframe
-                    src="http://localhost:3002/d/5dc3d6f3-ca96-41cc-b4dc-ddd9f9af0176/photofinder-system-overview?orgId=1&refresh=5s&kiosk"
-                    width="100%"
-                    height="100%"
-                    frameBorder="0"
-                    className="w-full h-full"
-                  ></iframe>
-                </div>
-              </Card>
+              <SystemHealth />
             </TabsContent>
           </Tabs>
         </div>

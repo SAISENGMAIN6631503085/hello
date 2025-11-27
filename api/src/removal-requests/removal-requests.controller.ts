@@ -1,37 +1,43 @@
-import { Controller, Post, Body, Get, Delete, Param } from '@nestjs/common';
+import { Controller, Post, Body, Get, Delete, Param, Headers, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-
-interface RemovalRequest {
-    id: string;
-    photoId: string;
-    requestType: string;
-    userName: string;
-    reason?: string;
-    createdAt: Date;
-    status: 'PENDING' | 'APPROVED' | 'REJECTED';
-}
-
-// In-memory storage (for demo purposes)
-const removalRequests: RemovalRequest[] = [];
 
 @Controller('removal-requests')
 export class RemovalRequestsController {
     constructor(private prisma: PrismaService) { }
 
     @Post()
-    async create(@Body() data: { photoId: string; requestType: string; userName: string; reason?: string }) {
-        const request: RemovalRequest = {
-            id: `req_${Date.now()}`,
-            photoId: data.photoId,
-            requestType: data.requestType,
-            userName: data.userName,
-            reason: data.reason,
-            createdAt: new Date(),
-            status: 'PENDING',
-        };
+    async create(
+        @Body() data: { photoId: string; requestType: string; userName: string; userEmail?: string; reason?: string },
+    ) {
+        if (!data.userName) {
+            throw new UnauthorizedException('User name required');
+        }
 
-        removalRequests.push(request);
-        console.log('Removal request received:', request);
+        // Find or create user
+        let user = await this.prisma.user.findUnique({
+            where: { email: data.userEmail || `${data.userName.toLowerCase().replace(/\s+/g, '')}@temp.local` },
+        });
+
+        if (!user) {
+            user = await this.prisma.user.create({
+                data: {
+                    email: data.userEmail || `${data.userName.toLowerCase().replace(/\s+/g, '')}@temp.local`,
+                    name: data.userName,
+                    role: 'STUDENT',
+                },
+            });
+        }
+
+        const request = await this.prisma.removalRequest.create({
+            data: {
+                photoId: data.photoId,
+                userId: user.id,
+                requestType: data.requestType.toUpperCase() as any,
+                reason: data.reason,
+            },
+        });
+
+        console.log('Removal request created:', request);
 
         return {
             message: 'Removal request submitted successfully',
@@ -41,35 +47,43 @@ export class RemovalRequestsController {
 
     @Get()
     async findAll() {
-        // Fetch photo details for each request
-        const requestsWithPhotos = await Promise.all(
-            removalRequests.map(async (req) => {
-                const photo = await this.prisma.photo.findUnique({
-                    where: { id: req.photoId },
+        const requests = await this.prisma.removalRequest.findMany({
+            include: {
+                photo: {
                     include: { event: true },
-                });
+                },
+                user: true,
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+        });
 
-                return {
-                    ...req,
-                    photo: photo ? {
-                        id: photo.id,
-                        url: photo.storageUrl,
-                        eventName: photo.event.name,
-                    } : null,
-                };
-            })
-        );
-
-        return requestsWithPhotos;
+        return requests.map(req => ({
+            id: req.id,
+            photoId: req.photoId,
+            requestType: req.requestType,
+            userName: req.user?.name || 'Unknown',
+            reason: req.reason,
+            createdAt: req.createdAt,
+            status: req.status,
+            photo: req.photo ? {
+                id: req.photo.id,
+                url: req.photo.storageUrl,
+                eventName: req.photo.event.name,
+            } : null,
+        }));
     }
 
     @Delete(':id')
     async remove(@Param('id') id: string) {
-        const index = removalRequests.findIndex(req => req.id === id);
-        if (index !== -1) {
-            removalRequests.splice(index, 1);
+        try {
+            await this.prisma.removalRequest.delete({
+                where: { id },
+            });
             return { message: 'Request deleted successfully' };
+        } catch (error) {
+            return { message: 'Request not found' };
         }
-        return { message: 'Request not found' };
     }
 }

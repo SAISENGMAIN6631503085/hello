@@ -10,4 +10,9 @@ export class MetricsController {
     async getMetrics(): Promise<string> {
         return this.metricsService.getMetrics();
     }
+
+    @Get('json')
+    async getMetricsJson() {
+        return this.metricsService.getMetricsJson();
+    }
 }

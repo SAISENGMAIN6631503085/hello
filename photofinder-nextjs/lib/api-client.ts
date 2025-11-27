@@ -98,10 +98,10 @@ export const apiClient = {
     apiCall(`/photos/${photoId}`, {
       method: "DELETE",
     }),
-  requestPhotoRemoval: (photoId: string, requestType: string, userName: string, reason?: string) =>
+  requestPhotoRemoval: (photoId: string, requestType: string, userName: string, userEmail: string, reason?: string) =>
     apiCall("/removal-requests", {
       method: "POST",
-      body: JSON.stringify({ photoId, requestType, userName, reason }),
+      body: JSON.stringify({ photoId, requestType, userName, userEmail, reason }),
     }),
   getRemovalRequests: () => apiCall("/removal-requests"),
   deleteRemovalRequest: (requestId: string) =>
