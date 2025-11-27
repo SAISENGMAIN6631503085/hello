@@ -109,18 +109,19 @@ export default function FaceSearchPage() {
     <>
       <Header showLogout />
       <main className="min-h-screen bg-gradient-to-b from-background to-secondary/5">
-        <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8 text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full border border-primary/20 mb-4">
               <Sparkles className="w-4 h-4 text-primary" />
               <span className="text-sm font-semibold text-primary">AI-Powered Face Search</span>
             </div>
-            <h1 className="text-4xl font-bold text-foreground">Find Your Photos</h1>
-            <p className="text-muted-foreground mt-3 text-lg">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground">Find Your Photos</h1>
+            <p className="text-muted-foreground mt-3 text-base sm:text-lg px-4">
               Upload a selfie and let AI discover all your moments across campus events
             </p>
           </div>
 
+          <div className="max-w-4xl mx-auto">
           <Card className="border-2 border-primary/30 mb-8 bg-gradient-to-br from-card to-primary/5">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -237,9 +238,11 @@ export default function FaceSearchPage() {
               )}
             </div>
           )}
+          </div>
 
           {/* Help Section */}
           {!hasSearched && !uploadedImage && (
+            <div className="max-w-4xl mx-auto">
             <Card className="border border-border mt-8 bg-card/50">
               <CardHeader>
                 <CardTitle className="text-lg">Tips for Best Results</CardTitle>
@@ -251,6 +254,7 @@ export default function FaceSearchPage() {
                 <p>- Multiple search attempts can help find more photos</p>
               </CardContent>
             </Card>
+            </div>
           )}
         </div>
       </main>

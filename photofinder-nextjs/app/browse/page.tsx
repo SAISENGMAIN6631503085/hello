@@ -109,25 +109,33 @@ export default function BrowsePhotosPage() {
   return (
     <>
       <Header showLogout />
-      <main className="min-h-screen bg-gradient-to-b from-background to-secondary/5">
+      <main className="min-h-screen bg-gradient-to-b from-background to-secondary/5 overflow-x-hidden">
         {/* Header Section */}
         <div className="bg-card border-b border-border">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <h1 className="text-3xl font-bold text-foreground mb-2">Browse All Photos</h1>
-            <p className="text-muted-foreground">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Browse All Photos</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
               {filteredPhotos.length} photo{filteredPhotos.length !== 1 ? "s" : ""} found
             </p>
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex gap-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 w-full overflow-hidden">
+            {/* Mobile Filter Overlay */}
+            {showFilters && (
+              <div className="lg:hidden fixed inset-0 bg-black/50 z-40" onClick={() => setShowFilters(false)} />
+            )}
+            
             <aside
-              className={`${showFilters ? "w-64" : "w-0"} transition-all duration-300 overflow-hidden flex-shrink-0`}
+              className={`${
+                showFilters ? "translate-x-0" : "-translate-x-full"
+              } lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-50 lg:z-auto w-72 lg:w-64 flex-shrink-0 transition-transform duration-300 lg:transition-none`}
             >
-              <div className="bg-card border border-border rounded-lg p-4 sticky top-24">
+              <div className="bg-card border border-border rounded-none lg:rounded-lg p-4 h-full lg:h-auto lg:sticky lg:top-24 overflow-y-auto">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="font-semibold text-foreground">Filters</h2>
+                  <div className="flex items-center gap-2">
                   {isFiltered && (
                     <Button
                       variant="ghost"
@@ -135,9 +143,18 @@ export default function BrowsePhotosPage() {
                       onClick={handleClearFilters}
                       className="text-xs text-primary hover:text-primary/80"
                     >
-                      Clear all
+                      Clear
                     </Button>
                   )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowFilters(false)}
+                    className="lg:hidden text-xs"
+                  >
+                    ✕
+                  </Button>
+                  </div>
                 </div>
 
                 {/* Sort */}
@@ -157,7 +174,7 @@ export default function BrowsePhotosPage() {
                 {/* Events Filter */}
                 <div className="space-y-3">
                   <label className="text-sm font-medium text-foreground block">Events</label>
-                  <div className="space-y-2">
+                  <div className="space-y-2 max-h-64 lg:max-h-96 overflow-y-auto">
                     {events.map((event) => (
                       <label key={event} className="flex items-center gap-3 cursor-pointer">
                         <input
@@ -166,7 +183,7 @@ export default function BrowsePhotosPage() {
                           onChange={() => handleToggleEvent(event)}
                           className="w-4 h-4 rounded border border-border accent-primary cursor-pointer"
                         />
-                        <span className="text-sm text-foreground flex-1">{event}</span>
+                        <span className="text-sm text-foreground flex-1 truncate">{event}</span>
                         <span className="text-xs text-muted-foreground">
                           ({allPhotos.filter((p) => p.eventName === event).length})
                         </span>
@@ -178,25 +195,25 @@ export default function BrowsePhotosPage() {
             </aside>
 
             {/* Main Content */}
-            <div className="flex-1">
+            <div className="flex-1 min-w-0 w-full">
               {/* Search and Controls */}
-              <div className="flex gap-4 mb-6">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6">
+                <div className="flex-1 min-w-0 relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                   <Input
                     placeholder="Search events..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 border-border bg-background text-foreground"
+                    className="pl-10 w-full border-border bg-background text-foreground"
                   />
                 </div>
                 <Button
                   variant="outline"
                   onClick={() => setShowFilters(!showFilters)}
-                  className="md:hidden border-border bg-transparent"
+                  className="lg:hidden border-border bg-transparent w-full sm:w-auto flex-shrink-0"
                 >
-                  <ChevronDown className="w-4 h-4 mr-2" />
-                  Filters
+                  <ChevronDown className={`w-4 h-4 mr-2 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+                  {showFilters ? 'Hide Filters' : 'Show Filters'}
                 </Button>
               </div>
 
@@ -208,7 +225,7 @@ export default function BrowsePhotosPage() {
               ) : filteredPhotos.length > 0 ? (
                 <>
                   <PhotoGrid photos={filteredPhotos} />
-                  <div className="mt-8 text-center text-sm text-muted-foreground">
+                  <div className="mt-6 sm:mt-8 text-center text-xs sm:text-sm text-muted-foreground">
                     Showing {filteredPhotos.length} of {allPhotos.length} photos
                   </div>
                 </>

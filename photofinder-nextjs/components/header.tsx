@@ -101,7 +101,7 @@ export function Header({ showLogout = false, userRole = "student" }: HeaderProps
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={handleLogout}
-                className="text-destructive hover:bg-destructive/10 focus:bg-destructive/10 hover:text-destructive focus:text-destructive"
+                className="text-destructive hover:bg-destructive hover:text-destructive-foreground focus:bg-destructive focus:text-destructive-foreground"
               >
                 <LogOut className="w-4 h-4 mr-2" />
                 Sign Out

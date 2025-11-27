@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Card } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Eye, Download, CheckCircle, Heart } from "lucide-react"
 import { PhotoDetailModal } from "@/components/photo-detail-modal"
@@ -80,6 +80,29 @@ export function SearchResultGrid({ photos }: SearchResultGridProps) {
     }
   }
 
+  const handleDownload = async (photo: Photo, e: React.MouseEvent) => {
+    e.stopPropagation()
+    try {
+      const response = await fetch(photo.url)
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      const date = new Date(photo.eventDate).toISOString().split('T')[0]
+      const timestamp = Date.now()
+      a.download = `${photo.eventName.replace(/\s+/g, '_')}_${date}_${timestamp}.jpg`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (err) {
+      console.error('Failed to download photo:', err)
+      alert('Unable to download automatically. Opening photo in new tab...')
+      // Fallback to opening in new tab
+      window.open(photo.url, '_blank')
+    }
+  }
+
   const getConfidenceBadgeColor = (confidence: number) => {
     const percent = confidence * 100;
     if (percent >= 90) return "bg-green-500";
@@ -102,11 +125,7 @@ export function SearchResultGrid({ photos }: SearchResultGridProps) {
         {photos.map((photo, index) => (
           <Card
             key={photo.id}
-            className="overflow-hidden border-2 border-border hover:border-primary hover:shadow-xl transition-all duration-300 cursor-pointer group relative"
-            onClick={() => {
-              setSelectedPhoto(photo)
-              setShowDetail(true)
-            }}
+            className="overflow-hidden border-2 border-border hover:border-primary hover:shadow-xl transition-all duration-300 group relative"
           >
             {/* Rank Badge */}
             {index < 3 && (
@@ -118,7 +137,13 @@ export function SearchResultGrid({ photos }: SearchResultGridProps) {
               </div>
             )}
 
-            <div className="relative aspect-square bg-muted overflow-hidden">
+            <div 
+              className="relative aspect-square bg-muted overflow-hidden cursor-pointer"
+              onClick={() => {
+                setSelectedPhoto(photo)
+                setShowDetail(true)
+              }}
+            >
               <Image
                 src={photo.url || "/placeholder.svg"}
                 alt={photo.eventName}
@@ -129,8 +154,8 @@ export function SearchResultGrid({ photos }: SearchResultGridProps) {
               {/* Gradient Overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
 
-              {/* Hover Actions */}
-              <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              {/* Desktop Hover Actions - Only show on hover for desktop */}
+              <div className="hidden 2xl:flex absolute inset-0 items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Button
                   size="sm"
                   variant="secondary"
@@ -157,10 +182,7 @@ export function SearchResultGrid({ photos }: SearchResultGridProps) {
                   size="sm"
                   variant="secondary"
                   className="bg-white/90 hover:bg-white text-black shadow-lg"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    window.open(photo.url, '_blank')
-                  }}
+                  onClick={(e) => handleDownload(photo, e)}
                 >
                   <Download className="w-4 h-4" />
                 </Button>
@@ -193,6 +215,44 @@ export function SearchResultGrid({ photos }: SearchResultGridProps) {
                 </div>
               </div>
             </div>
+
+            {/* Action Buttons - Always visible below the image */}
+            <CardContent className="p-3 2xl:hidden">
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className={`flex-1 ${savedPhotoIds.includes(photo.id) ? 'bg-primary hover:bg-primary/90 text-primary-foreground border-primary' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleSavePhoto(photo.id, e)
+                  }}
+                >
+                  <Heart className={`w-4 h-4 mr-1 ${savedPhotoIds.includes(photo.id) ? 'fill-current' : ''}`} />
+                  {savedPhotoIds.includes(photo.id) ? 'Saved' : 'Save'}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setSelectedPhoto(photo)
+                    setShowDetail(true)
+                  }}
+                >
+                  <Eye className="w-4 h-4 mr-1" />
+                  View
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={(e) => handleDownload(photo, e)}
+                >
+                  <Download className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardContent>
           </Card>
         ))}
       </div>

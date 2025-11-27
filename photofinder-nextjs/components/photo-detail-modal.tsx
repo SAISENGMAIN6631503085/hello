@@ -38,6 +38,27 @@ export function PhotoDetailModal({ photo, isOpen, onClose }: PhotoDetailModalPro
 
   if (!photo) return null
 
+  const handleDownload = async () => {
+    try {
+      const response = await fetch(photo.url)
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      const date = new Date(photo.eventDate).toISOString().split('T')[0]
+      const timestamp = Date.now()
+      a.download = `${photo.eventName.replace(/\s+/g, '_')}_${date}_${timestamp}.jpg`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (err) {
+      console.error('Failed to download photo:', err)
+      alert('Unable to download automatically. Opening photo in new tab...')
+      window.open(photo.url, '_blank')
+    }
+  }
+
   const handleSubmitRemovalRequest = async () => {
     // Validate required fields
     if (!reason.trim()) {
@@ -98,12 +119,7 @@ export function PhotoDetailModal({ photo, isOpen, onClose }: PhotoDetailModalPro
             {!showRemovalRequest ? (
               <>
                 <Button
-                  onClick={() => {
-                    const link = document.createElement("a")
-                    link.href = photo.url
-                    link.download = `${photo.eventName}-${photo.id}.jpg`
-                    link.click()
-                  }}
+                  onClick={handleDownload}
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
                   <Download className="w-4 h-4 mr-2" />
