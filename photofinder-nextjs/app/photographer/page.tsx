@@ -269,8 +269,9 @@ export default function PhotographerPage() {
 
   const getStatusDisplay = (status: string) => {
     switch (status) {
+      case "completed":
       case "processed":
-        return { icon: <CheckCircle className="w-3 h-3" />, variant: "default" as const, label: "Processed" }
+        return { icon: <CheckCircle className="w-3 h-3" />, variant: "default" as const, label: "Completed" }
       case "processing":
         return { icon: <Clock className="w-3 h-3" />, variant: "secondary" as const, label: "Processing" }
       case "failed":
@@ -335,7 +336,7 @@ export default function PhotographerPage() {
               {photographerUser && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="flex items-center gap-2">
+                    <Button variant="ghost" className="flex items-center gap-2 hover:bg-primary/10">
                       <span className="text-sm font-medium text-foreground">{photographerUser.name}</span>
                       <ChevronDown className="w-4 h-4 text-muted-foreground" />
                     </Button>
@@ -354,7 +355,7 @@ export default function PhotographerPage() {
                         localStorage.removeItem("user_data")
                         router.push("/")
                       }}
-                      className="text-destructive focus:text-destructive"
+                      className="text-destructive focus:text-destructive hover:bg-destructive hover:text-destructive-foreground focus:bg-destructive focus:text-destructive-foreground"
                     >
                       <LogOut className="w-4 h-4 mr-2" />
                       Sign Out

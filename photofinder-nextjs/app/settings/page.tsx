@@ -6,21 +6,14 @@ import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Lock, Bell, Shield, CheckCircle2 } from "lucide-react"
-
-interface ConsentData {
-  globalFaceSearch: boolean
-  dataProcessing: boolean
-  emailNotifications: boolean
-}
+import { PrivacyConsentForm, type ConsentData } from "@/components/privacy-consent-form"
 
 export default function SettingsPage() {
   const router = useRouter()
   const [consent, setConsent] = useState<ConsentData>({
     globalFaceSearch: true,
     dataProcessing: true,
-    emailNotifications: true,
   })
   const [isSaving, setIsSaving] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
@@ -32,7 +25,6 @@ export default function SettingsPage() {
       setConsent({
         globalFaceSearch: parsed.globalFaceSearch ?? true,
         dataProcessing: parsed.dataProcessing ?? true,
-        emailNotifications: parsed.emailNotifications ?? true,
       })
     }
   }, [])
@@ -93,7 +85,6 @@ export default function SettingsPage() {
           <Tabs defaultValue="privacy" className="space-y-6">
             <TabsList className="bg-card border border-border">
               <TabsTrigger value="privacy">Privacy & Consent</TabsTrigger>
-              <TabsTrigger value="notifications">Notifications</TabsTrigger>
             </TabsList>
 
             {/* Privacy Tab */}
@@ -139,77 +130,12 @@ export default function SettingsPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Face Search Consent */}
-                  <div className="space-y-3 p-4 border border-border/50 rounded-lg bg-card/30">
-                    <div className="flex items-start gap-3">
-                      <Checkbox
-                        id="globalFaceSearch"
-                        checked={consent.globalFaceSearch}
-                        onCheckedChange={() => handleConsentChange("globalFaceSearch")}
-                        className="mt-1"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <label
-                          htmlFor="globalFaceSearch"
-                          className="text-sm font-semibold text-foreground cursor-pointer block"
-                        >
-                          Enable AI Face Search
-                        </label>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Allow the system to identify your face in event photos and create a personal photo album. You
-                          can change this per-event or withdraw consent anytime.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                  <PrivacyConsentForm
+                    consent={consent}
+                    onChange={handleConsentChange}
+                    disabled={isSaving}
+                  />
 
-                  {/* Data Processing Consent */}
-                  <div className="space-y-3 p-4 border border-border/50 rounded-lg bg-card/30">
-                    <div className="flex items-start gap-3">
-                      <Checkbox
-                        id="dataProcessing"
-                        checked={consent.dataProcessing}
-                        onCheckedChange={() => handleConsentChange("dataProcessing")}
-                        className="mt-1"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <label
-                          htmlFor="dataProcessing"
-                          className="text-sm font-semibold text-foreground cursor-pointer block"
-                        >
-                          Data Processing Agreement
-                        </label>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          I understand my biometric data will be processed and stored securely in compliance with GDPR
-                          and PDPA regulations. Data is retained only for the duration of the event.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Email Notifications */}
-                  <div className="space-y-3 p-4 border border-border/50 rounded-lg bg-card/30">
-                    <div className="flex items-start gap-3">
-                      <Checkbox
-                        id="emailNotifications"
-                        checked={consent.emailNotifications}
-                        onCheckedChange={() => handleConsentChange("emailNotifications")}
-                        className="mt-1"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <label
-                          htmlFor="emailNotifications"
-                          className="text-sm font-semibold text-foreground cursor-pointer block"
-                        >
-                          Email Notifications
-                        </label>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Receive notifications when your photos are available from events. You can unsubscribe at any
-                          time.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
 
                   {/* Privacy Rights Info */}
                   <div className="space-y-3 p-4 bg-muted/50 rounded-lg border border-border/30">
@@ -239,50 +165,8 @@ export default function SettingsPage() {
               </Card>
             </TabsContent>
 
-            {/* Notifications Tab */}
-            <TabsContent value="notifications" className="space-y-4">
-              <Card className="border border-border">
-                <CardHeader>
-                  <div className="flex items-start gap-3">
-                    <Bell className="w-5 h-5 text-primary mt-0.5" />
-                    <div>
-                      <CardTitle>Notification Preferences</CardTitle>
-                      <CardDescription>Manage email and notification settings</CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="p-4 bg-muted/50 rounded-lg border border-border/30">
-                    <p className="text-sm text-muted-foreground">
-                      Email notifications are controlled in the Privacy & Consent tab. You'll receive emails when new
-                      photos from events are available.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
           </Tabs>
 
-          {/* Danger Zone */}
-          <Card className="border border-destructive/50 bg-destructive/5 mt-8">
-            <CardHeader>
-              <CardTitle className="text-destructive">Danger Zone</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button
-                variant="outline"
-                className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 bg-transparent"
-              >
-                Request Data Download
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 bg-transparent"
-              >
-                Request Account Deletion
-              </Button>
-            </CardContent>
-          </Card>
         </div>
       </main>
     </>

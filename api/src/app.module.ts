@@ -12,6 +12,7 @@ import { MinioModule } from './minio/minio.module';
 import { MetricsModule } from './metrics/metrics.module';
 import { RemovalRequestsModule } from './removal-requests/removal-requests.module';
 import { SavedPhotosModule } from './saved-photos/saved-photos.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { SavedPhotosModule } from './saved-photos/saved-photos.module';
     MinioModule,
     RemovalRequestsModule,
     SavedPhotosModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -22,7 +22,6 @@ interface HeaderProps {
 export function Header({ showLogout = false, userRole = "student" }: HeaderProps) {
   const router = useRouter()
   const [userName, setUserName] = useState("")
-  const [universityId, setUniversityId] = useState("")
   const [userEmail, setUserEmail] = useState("")
 
   useEffect(() => {
@@ -33,10 +32,8 @@ export function Header({ showLogout = false, userRole = "student" }: HeaderProps
       setUserEmail(storedEmail)
     } else {
       const storedName = localStorage.getItem("user_name")
-      const storedId = localStorage.getItem("university_id")
       const storedEmail = localStorage.getItem("user_email") || "student@mfu.ac.th"
       if (storedName) setUserName(storedName)
-      if (storedId) setUniversityId(storedId)
       setUserEmail(storedEmail)
     }
   }, [userRole])
@@ -84,7 +81,6 @@ export function Header({ showLogout = false, userRole = "student" }: HeaderProps
                 <User className="w-4 h-4 mt-0.5" />
                 <div>
                   <div className="font-medium">{userName}</div>
-                  <div className="text-xs text-muted-foreground">ID: {universityId}</div>
                 </div>
               </DropdownMenuItem>
               <DropdownMenuItem className="flex items-center gap-2 hover:bg-primary/10 focus:bg-primary/10 hover:text-foreground focus:text-foreground">
