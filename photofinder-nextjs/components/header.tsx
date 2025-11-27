@@ -45,7 +45,7 @@ export function Header({ showLogout = false, userRole = "student" }: HeaderProps
     if (userRole === "admin") {
       localStorage.removeItem("admin_token")
       localStorage.removeItem("admin_name")
-      router.push("/admin/login")
+      router.push("/")
     } else {
       localStorage.removeItem("auth_token")
       localStorage.removeItem("user_name")

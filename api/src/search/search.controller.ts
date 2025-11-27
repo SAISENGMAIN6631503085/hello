@@ -25,7 +25,11 @@ export class SearchController {
             console.log('1. File received:', file.originalname, file.size);
 
             // 1. Get embedding from AI Service
+            const start = Date.now();
             const embeddings = await this.aiService.extractFaces(file.buffer);
+            const duration = (Date.now() - start) / 1000;
+            this.metricsService.aiProcessingDuration.observe({ operation: 'extract_faces_search' }, duration);
+
             console.log('2. Embeddings extracted:', embeddings?.length);
 
             if (!embeddings || embeddings.length === 0) {
@@ -63,12 +67,15 @@ export class SearchController {
 
                     if (!photo) return null;
 
+                    const confidence = 1 - (face._additional?.distance || 0);
+                    this.metricsService.aiConfidenceScore.observe({ operation: 'match' }, confidence);
+
                     return {
                         id: photo.id,
                         url: photo.storageUrl,
                         eventName: photo.event.name,
                         eventDate: photo.event.date,
-                        confidence: 1 - (face._additional?.distance || 0),
+                        confidence: confidence,
                     };
                 })
             );

@@ -10,6 +10,7 @@ import { DeliveryModule } from './delivery/delivery.module';
 import { AiModule } from './ai/ai.module';
 import { MinioModule } from './minio/minio.module';
 import { MetricsModule } from './metrics/metrics.module';
+import { RemovalRequestsModule } from './removal-requests/removal-requests.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { MetricsModule } from './metrics/metrics.module';
     DeliveryModule,
     AiModule,
     MinioModule,
+    RemovalRequestsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

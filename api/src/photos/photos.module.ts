@@ -6,9 +6,12 @@ import { AiModule } from '../ai/ai.module';
 import { SearchModule } from '../search/search.module';
 import { PrismaModule } from '../prisma/prisma.module';
 
+import { MetricsModule } from '../metrics/metrics.module';
+
 @Module({
-  imports: [MinioModule, AiModule, SearchModule, PrismaModule],
+  imports: [MinioModule, AiModule, SearchModule, PrismaModule, MetricsModule],
   controllers: [PhotosController],
   providers: [PhotosService],
+  exports: [PhotosService],
 })
 export class PhotosModule { }

@@ -11,6 +11,7 @@ export class MetricsService {
     public readonly photoUploadsTotal: Counter<string>;
     public readonly faceSearchTotal: Counter<string>;
     public readonly aiProcessingDuration: Histogram<string>;
+    public readonly aiConfidenceScore: Histogram<string>;
 
     constructor() {
         // Collect default metrics (CPU, memory, etc.)
@@ -53,6 +54,15 @@ export class MetricsService {
             name: 'ai_processing_duration_seconds',
             help: 'Duration of AI processing in seconds',
             labelNames: ['operation'],
+            registers: [register],
+        });
+
+        // AI confidence score
+        this.aiConfidenceScore = new Histogram({
+            name: 'ai_confidence_score',
+            help: 'Confidence score of AI detections and matches',
+            labelNames: ['operation'], // 'detection' or 'match'
+            buckets: [0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 0.99, 1.0],
             registers: [register],
         });
     }

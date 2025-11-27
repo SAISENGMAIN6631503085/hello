@@ -1,10 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Download, Share2, Trash2, AlertCircle } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Download, Trash2, AlertCircle } from "lucide-react"
+import { apiClient } from "@/lib/api-client"
 
 interface Photo {
   id: string
@@ -22,25 +25,60 @@ interface PhotoDetailModalProps {
 
 export function PhotoDetailModal({ photo, isOpen, onClose }: PhotoDetailModalProps) {
   const [showRemovalRequest, setShowRemovalRequest] = useState(false)
+  const [reason, setReason] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setShowRemovalRequest(false)
+      setReason("")
+    }
+  }, [isOpen])
 
   if (!photo) return null
 
+  const handleSubmitRemovalRequest = async () => {
+    // Validate required fields
+    if (!reason.trim()) {
+      alert("Please provide a reason for removal")
+      return
+    }
+
+    // Get user info from localStorage
+    const userName = localStorage.getItem("user_name") || "Unknown User"
+    const userEmail = localStorage.getItem("user_email") || ""
+
+    setIsSubmitting(true)
+    try {
+      const response = await apiClient.requestPhotoRemoval(photo.id, "REMOVAL", userName, reason)
+
+      if (response.error) {
+        alert("Failed to submit removal request. Please try again.")
+      } else {
+        alert("Removal request submitted successfully. Our team will review it within 24 hours.")
+        setShowRemovalRequest(false)
+        setReason("")
+        onClose()
+      }
+    } catch (error) {
+      alert("An error occurred. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{photo.eventName}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Photo Display */}
-          <div className="relative w-full aspect-square bg-muted rounded-lg overflow-hidden">
-            <Image src={photo.url || "/placeholder.svg"} alt={photo.eventName} fill className="object-cover" />
-            {photo.confidence && (
-              <div className="absolute top-3 right-3 bg-primary/90 text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full">
-                {Math.round(photo.confidence * 100)}% match
-              </div>
-            )}
+          <div className="relative w-full max-h-[400px] bg-muted rounded-lg overflow-hidden flex items-center justify-center">
+            <Image src={photo.url || "/placeholder.svg"} alt={photo.eventName} width={800} height={600} className="object-contain max-h-[400px] w-auto" />
           </div>
 
           {/* Photo Info */}
@@ -72,32 +110,12 @@ export function PhotoDetailModal({ photo, isOpen, onClose }: PhotoDetailModalPro
                   Download
                 </Button>
                 <Button
-                  variant="outline"
-                  className="w-full border-border bg-transparent"
-                  onClick={() => {
-                    navigator
-                      .share?.({
-                        title: photo.eventName,
-                        text: `Check out this photo from ${photo.eventName}!`,
-                        url: window.location.href,
-                      })
-                      .catch(() => {
-                        // Fallback if share API not available
-                        const text = `${photo.eventName} - ${window.location.href}`
-                        navigator.clipboard.writeText(text)
-                      })
-                  }}
-                >
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Share
-                </Button>
-                <Button
                   variant="ghost"
                   className="w-full text-destructive hover:text-destructive/90"
                   onClick={() => setShowRemovalRequest(true)}
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
-                  Request Removal or Blur
+                  Request Removal
                 </Button>
               </>
             ) : (
@@ -105,27 +123,43 @@ export function PhotoDetailModal({ photo, isOpen, onClose }: PhotoDetailModalPro
                 <div className="flex gap-3">
                   <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
                   <div className="text-sm space-y-2">
-                    <p className="font-semibold text-foreground">Request Photo Removal or Blur</p>
+                    <p className="font-semibold text-foreground">Request Photo Removal</p>
                     <p className="text-muted-foreground">
                       Our team will review your request within 24 hours. You'll receive an email confirmation.
                     </p>
                   </div>
                 </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1 block">
+                      Reason for Removal <span className="text-destructive">*</span>
+                    </label>
+                    <Textarea
+                      placeholder="Please explain why you want this photo removed"
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      className="min-h-[80px]"
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                </div>
                 <div className="flex gap-2 pt-2">
                   <Button
                     size="sm"
-                    onClick={() => {
-                      alert("Removal request submitted. We will review it within 24 hours.")
-                      setShowRemovalRequest(false)
-                    }}
+                    onClick={handleSubmitRemovalRequest}
+                    disabled={isSubmitting}
                     className="flex-1 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
                   >
-                    Submit Request
+                    {isSubmitting ? "Submitting..." : "Submit Request"}
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => setShowRemovalRequest(false)}
+                    onClick={() => {
+                      setShowRemovalRequest(false)
+                      setReason("")
+                    }}
+                    disabled={isSubmitting}
                     className="flex-1 border-border"
                   >
                     Cancel

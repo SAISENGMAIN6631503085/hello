@@ -45,7 +45,10 @@ export const apiClient = {
 
   // Events
   getEvents: () => apiCall("/events"),
+  getEvent: (id: string) => apiCall(`/events/${id}`),
   createEvent: (data: any) => apiCall("/events", { method: "POST", body: JSON.stringify(data) }),
+  updateEvent: (id: string, data: any) => apiCall(`/events/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+  deleteEvent: (id: string) => apiCall(`/events/${id}`, { method: "DELETE" }),
   uploadPhotos: (eventId: string, files: File[]) => {
     const formData = new FormData()
     files.forEach((file) => formData.append("files", file))
@@ -95,10 +98,15 @@ export const apiClient = {
     apiCall(`/photos/${photoId}`, {
       method: "DELETE",
     }),
-  requestPhotoRemoval: (photoId: string, requestType: string, reason?: string) =>
+  requestPhotoRemoval: (photoId: string, requestType: string, userName: string, reason?: string) =>
     apiCall("/removal-requests", {
       method: "POST",
-      body: JSON.stringify({ photoId, requestType, reason }),
+      body: JSON.stringify({ photoId, requestType, userName, reason }),
+    }),
+  getRemovalRequests: () => apiCall("/removal-requests"),
+  deleteRemovalRequest: (requestId: string) =>
+    apiCall(`/removal-requests/${requestId}`, {
+      method: "DELETE",
     }),
 
   // Deliveries

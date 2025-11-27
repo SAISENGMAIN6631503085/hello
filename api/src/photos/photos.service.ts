@@ -6,6 +6,8 @@ import { SearchService } from '../search/search.service';
 import { Prisma } from '@prisma/client';
 import sharp from 'sharp';
 
+import { MetricsService } from '../metrics/metrics.service';
+
 @Injectable()
 export class PhotosService {
     private readonly logger = new Logger(PhotosService.name);
@@ -15,6 +17,7 @@ export class PhotosService {
         private minioService: MinioService,
         private aiService: AiService,
         private searchService: SearchService,
+        private metricsService: MetricsService,
     ) { }
 
     create(data: Prisma.PhotoCreateInput) {
@@ -22,7 +25,9 @@ export class PhotosService {
     }
 
     findAll() {
-        return this.prisma.photo.findMany();
+        return this.prisma.photo.findMany({
+            include: { event: true },
+        });
     }
 
     async uploadAndProcessPhoto(file: Express.Multer.File, eventId: string) {
@@ -60,8 +65,19 @@ export class PhotosService {
 
         try {
             // 4. Detect faces with AI
+            const start = Date.now();
             const faces = await this.aiService.extractFaces(file.buffer);
+            const duration = (Date.now() - start) / 1000; // Convert to seconds
+            this.metricsService.aiProcessingDuration.observe({ operation: 'extract_faces' }, duration);
+
             this.logger.log(`Detected ${faces.length} faces in photo ${photo.id}`);
+
+            // Record confidence scores
+            faces.forEach(face => {
+                if (face.det_score) {
+                    this.metricsService.aiConfidenceScore.observe({ operation: 'detection' }, face.det_score);
+                }
+            });
 
             // 5. Save each face to DB and Weaviate
             for (const faceData of faces) {
