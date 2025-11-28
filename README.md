@@ -46,7 +46,7 @@ Before you begin, ensure you have the following installed:
 - **Node.js** (v18 or higher) - [Download](https://nodejs.org/)
 - **Docker Desktop** - [Download](https://www.docker.com/products/docker-desktop/)
 - **Git** - [Download](https://git-scm.com/)
-- **npm** or **yarn** (comes with Node.js)
+- **npm** or **pnpm** (npm comes with Node.js, pnpm: `npm install -g pnpm`)
 
 ## Getting Started
 
@@ -113,11 +113,15 @@ Open a **new terminal window**:
 ```bash
 cd photofinder-nextjs
 
-# Install dependencies
+# Install dependencies (choose one)
 npm install
+# or
+pnpm install
 
 # Start the development server
 npm run dev
+# or
+pnpm dev
 ```
 
 The frontend will be running at `http://localhost:3001`
@@ -308,6 +312,7 @@ npm run start:dev
 ```bash
 cd photofinder-nextjs
 npm run dev
+# or: pnpm dev
 ```
 
 ### Database Management
